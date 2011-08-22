@@ -243,7 +243,7 @@ function htmlLastPollerTime() {
         }
         echo "Last poll time: {$color}" . _ago($lastpolltime) . " ago</span>";
     } else {
-        echo '<span class="red">Never polled or permissions issue. </span>';
+        echo '<span class="red">Never polled or permissions issue</span>';
     }
 }
 
