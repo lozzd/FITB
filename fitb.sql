@@ -1,4 +1,3 @@
-use fitb;
 CREATE TABLE `ports` (
       `host` varchar(255) NOT NULL,
       `name` varchar(255) NOT NULL,
