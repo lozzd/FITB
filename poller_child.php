@@ -36,6 +36,11 @@ logline("{$pollprettyhost} - SNMP poll complete", 1, $verbose);
 
 # Here comes the fun. For every interface, we need to create every graph type that we decided we would graph in the config
 
+if (!$ifEntry) {
+    logline("{$pollprettyhost} - SNMP Failed! Either no results, no response or timeout. ", 0, $verbose);
+    exit();
+}
+
 foreach($ifEntry as $intid => $thisint) {
     logline("{$pollprettyhost} - Starting interface loop for interface index {$intid} ({$thisint[2]})", 1, $verbose);
 

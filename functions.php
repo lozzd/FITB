@@ -288,8 +288,10 @@ function snmptable($host, $community, $oid) {
     snmp_set_enum_print(TRUE);
 
     $retval = array();
-    $raw = snmp2_real_walk($host, $community, $oid);
-    if (count($raw) == 0) return ($retval); // no data
+    if(!$raw = snmp2_real_walk($host, $community, $oid)) {
+        return false;
+    }
+    if (count($raw) == 0) return false; // no data
 
     $prefix_length = 0;
     $largest = 0;
@@ -312,7 +314,7 @@ function snmptable($host, $community, $oid) {
         $retval[$index[1]][$index[0]] = $value;
     }
 
-    if (count($retval) == 0) return ($retval); // no data
+    if (count($retval) == 0) return false; // no data
 
     // fill in holes and blanks the agent may "give" you
     foreach($retval as $k => $x) {
