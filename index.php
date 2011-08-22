@@ -18,6 +18,13 @@ include_once('functions.php');
         <h2>Welcome to FITB</h2>
         <p>FITB is a automatic, RRDTool based graphing product that leaves no port untouched.</p>
         <p>Select a host from the left.</p>
+        <?php 
+        if (!connectToDB()) {
+            echo '<p><span class="red">FITB is having trouble connecting to your database. Have you set up MySQL with the FITB database and specified 
+                the correct connection parameters in config.php?</span></p>';
+        }
+
+        ?>
     <div>
 </div>
 

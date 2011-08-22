@@ -197,13 +197,18 @@ function logline($message, $messverbose, $reqverbose) {
 
 function connectToDB() {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db;
-    if(!mysql_connect($mysql_host, $mysql_user, $mysql_pass)) {
+    if(function_exists(mysql_connect)) {
+        if(!mysql_connect($mysql_host, $mysql_user, $mysql_pass)) {
+            return false;
+        }
+        if(!mysql_select_db($mysql_db)) {
+            return false;
+        }
+        return true;
+    } else {
+        echo "MySQL support is required";
         return false;
     }
-    if(!mysql_select_db($mysql_db)) {
-        return false;
-    }
-    return true;
 }
 
 function htmlHostsInConfig() {
@@ -228,28 +233,36 @@ function htmlHostsInConfig() {
 
 function htmlLastPollerTime() {
     global $path_rrd;
- 
-    $lastpolltime = file_get_contents($path_rrd . "lastpolltime.txt");
-    if ((time() - $lastpolltime) > 400) {
-        $color = '<span class="red">'; 
+    
+    if (is_readable($path_rrd . "lastpolltime.txt")) { 
+        $lastpolltime = file_get_contents($path_rrd . "lastpolltime.txt");
+        if ((time() - $lastpolltime) > 400) {
+            $color = '<span class="red">'; 
+        } else {
+            $color = '<span>';
+        }
+        echo "Last poll time: {$color}" . _ago($lastpolltime) . " ago</span>";
     } else {
-        $color = '<span>';
+        echo '<span class="red">Never polled or permissions issue. </span>';
     }
-    echo "Last poll time: {$color}" . _ago($lastpolltime) . " ago</span>";
 }
 
 function htmlNumberOfGraphs() {
-    connectToDB();
-    $results = mysql_query("SELECT COUNT(*) from ports;");
-    $ports = mysql_result($results, 0);
-    echo "{$ports} graphs";
+    if(connectToDB()) {
+        $results = mysql_query("SELECT COUNT(*) from ports;");
+        $ports = mysql_result($results, 0);
+        echo "{$ports} graphs";
+    } else {
+        echo " Connect to database failed, are your MySQL details correct? ";
+    }
 }
 
 function htmlNumberOfHosts() {
-    connectToDB();
-    $results = mysql_query("SELECT COUNT(DISTINCT(host)) from ports;");
-    $hosts = mysql_result($results, 0);
-    echo "{$hosts} hosts";
+    if(connectToDB()) {
+        $results = mysql_query("SELECT COUNT(DISTINCT(host)) from ports;");
+        $hosts = mysql_result($results, 0);
+        echo "{$hosts} hosts";
+    }
 }
 
 function _ago($tm,$rcs = 0) {
