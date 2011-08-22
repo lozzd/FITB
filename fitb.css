@@ -1,0 +1,90 @@
+body,
+html {
+    font-family: "Lucida Grande";
+    margin: 0px;
+}
+
+.graphcaption {
+    font-size: 10px;
+}
+
+.headerinfo {
+    font-size: 10px;
+    margin-bottom: 5px;
+    text-align: right;
+}
+
+#wrap {
+    margin:0 auto;
+    margin-top: -15px;
+}
+
+#side {
+    float: left;
+    margin-left: 5px;
+    margin-top: 0px;
+    padding-top: 0px;
+    width: 200px;
+    font-size: 0.9em;
+}
+
+#side ul {
+    padding-left: 1em;
+    margin-left: 1em;
+}
+
+#main {
+    margin-left: 210px;
+}
+
+h1 {
+    margin: 2px;
+}
+
+h2 {
+    margin-bottom: 3px;
+}
+
+#header {
+    height: 50px;
+    background: #D36B00
+}
+
+#headside {
+    float: left;
+    color: white;
+    padding: 4px;
+    padding-left: 10px;
+}
+
+#headside a {
+    color: white;
+}
+
+#headright {
+    float: right;
+    margin-top: 5px;
+    margin-right: 5px;
+    color: white;
+}
+
+form { 
+    display: inline; 
+}
+
+img {
+    border: none
+}
+
+.red {
+    color: red;
+}
+
+.green {
+    color: green;
+}
+
+.small {
+    font-size: 0.8em;
+    margin: 4px;
+}

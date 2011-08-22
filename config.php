@@ -1,0 +1,50 @@
+<?php
+
+# POLLING ENABLED:
+# This is the master switch. Flip this to false if you want to stop polling for any reason. 
+$pollingenabled = true;
+
+#
+# This is the list of hosts you want to poll every minute for data. 
+# 
+$pollhosts = array(
+    "switchname" => array("prettyname" => "switchname", "enabled" => true, "showoninterface" => true, "ip" => "switchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors')),
+    # more hosts go here
+);
+
+# Verbosity. Choose your level of logging here. This affects everything that logs, which at the minute is
+# just the poller and it's child processes. 
+#
+# 0 for almost nothing, 1 for some information, 2 for lots of information. 
+$verbose = 1;
+
+# The path to your desired rrdtool binary.
+$path_rrdtool = "/usr/bin/rrdtool";
+
+# The path where you want to store your RRD files
+$path_rrd = "/var/lib/fitb/rrds/";
+
+# Database connection parameters
+$mysql_host = "localhost";
+$mysql_user = "fitbuser";
+$mysql_pass = "f1tbP4ss";
+$mysql_db = "fitb";
+
+# Old age:
+# Mark graphs older than this many seconds as stale
+$staleage = 1800;
+
+# DELETE graphs that have been stale for this many seconds
+# WARNING! You will lose your data if you don't set this correctly!
+# You have been warned!
+# Set to 0 to disable deletion of ports that have since been downed. 
+$purgeage = 2592000;
+
+# Time periods:
+# An array of time periods that you wish to be selectable from the dropdown at the top of every page.
+# E.g. 300 seconds = 5 minutes
+$configtimeperiods = array (-300 => '5 minutes', -3600 => '1 hour', -7200 => '2 hours', -14400 => '4 hours', -43200 => '12 hours', -86400 => '1 day', -172800 => '2 days', -604800 => '7 days', -1209600 => '14 days', -2678400 => '1 month');
+
+# PHP Error reporting
+# Incase you want to debug my crappy code, change this
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
