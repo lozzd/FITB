@@ -16,6 +16,8 @@ if(isset($_GET['duration'])) {
 <head>
 <title>FITB - View port - <?php echo "$viewhost - $viewport" ?></title>
 <link rel="stylesheet" href="fitb.css" type="text/css" media="screen" /> 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="fitb.js"></script>
 <meta http-equiv="refresh" content="60">
 </head>
 

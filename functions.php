@@ -215,7 +215,7 @@ function htmlHostsInConfig() {
     global $pollhosts;
 
     # Prints HTML output of all the switches in the config
-    echo "<ul>";
+    echo "<ul id=\"navlinks\">";
     foreach ($pollhosts as $thishost) {
         if($thishost['showoninterface'] == true) {
             echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '">' . $thishost['prettyname'] . '</a>';
