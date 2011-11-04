@@ -8,7 +8,7 @@ $pollingenabled = true;
 # This is the list of hosts you want to poll every minute for data. 
 # 
 $pollhosts = array(
-    "switchname" => array("prettyname" => "switchname", "enabled" => true, "showoninterface" => true, "ip" => "switchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors')),
+    "yourswitchname" => array("prettyname" => "yourswitchname", "enabled" => true, "showoninterface" => true, "ip" => "yourswitchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors')),
     # more hosts go here
 );
 
