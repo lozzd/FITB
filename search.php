@@ -61,7 +61,11 @@ if((isset($_GET['host'])) && ($_GET['host'] != "")) {
                 $numresults = mysql_num_rows($result);
                 echo "<div class=\"small\">{$numresults} results found</div>";
                 while ($row = mysql_fetch_assoc($result)) {
-                    $friendlytitle = urlencode("{$row['host']} - {$row['name']} ({$row['alias']})");
+                    $staletag = "";
+                    if ((time() - $row['lastpoll']) > $staleage) {
+                        $staletag = "STALE: ";
+                    }
+                    $friendlytitle = urlencode("{$staletag}{$row['host']} - {$row['name']} ({$row['alias']})");
                     $basegraphurl = "graph.php?host={$row['host']}&rrdname={$row['host']}-{$row['safename']}&type={$row['graphtype']}{$start}&friendlytitle={$friendlytitle}";
                     echo '<a href="view' . $basegraphurl . '">';
                     echo '<img src="' . $basegraphurl . '&height=100&width=400" alt="'.$row['alias'].'"></a>';
