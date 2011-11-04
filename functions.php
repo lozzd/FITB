@@ -197,7 +197,7 @@ function logline($message, $messverbose, $reqverbose) {
 
 function connectToDB() {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db;
-    if(function_exists(mysql_connect)) {
+    if(function_exists("mysql_connect")) {
         if(!mysql_connect($mysql_host, $mysql_user, $mysql_pass)) {
             return false;
         }
