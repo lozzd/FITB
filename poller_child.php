@@ -44,11 +44,6 @@ if (!$ifEntry) {
 foreach($ifEntry as $intid => $thisint) {
     logline("{$pollprettyhost} - Starting interface loop for interface index {$intid} ({$thisint[2]})", 1, $verbose);
 
-    # Sanitise the name
-    $intname = str_replace("/", "-", $thisint[2]); 
-    $intname = str_replace(" ", "-", $intname); 
-    $thisint['name'] = $intname;
-
     # Check if the interface is up. No point graphing down interfaces. 
     if (($thisint[7] == "1") && ($thisint['8'] == "1")) {
 
@@ -66,7 +61,17 @@ foreach($ifEntry as $intid => $thisint) {
         $thisint['inbroadcast'] = $ifXEntry[$intid][9];
         $thisint['outbroadcast'] = $ifXEntry[$intid][13];
         $thisint['alias'] = $ifXEntry[$intid][18]; 
-        
+    
+        # Sanitise the name
+        $intname = str_replace("/", "-", $thisint[2]); 
+        $intname = str_replace(" ", "-", $intname); 
+        $intname = str_replace(":", "-", $intname); 
+        $intname = str_replace('"', "", $intname); 
+        $thisint['name'] = $intname;
+
+        # Sanitise the alias
+        $thisint['alias'] = str_replace('"', "", $thisint['alias']);
+       
         
         logline("{$pollprettyhost} - {$intname} - Description for {$intname} is {$thisint['alias']}.", 2, $verbose);
         
