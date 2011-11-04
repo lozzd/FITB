@@ -5,7 +5,7 @@ $viewtype = @$_GET['type'];
 
 $start = "";
 if(isset($_GET['duration'])) {
-    $start = "&start=" . $_GET['duration'];
+    $start = "&duration=" . $_GET['duration'];
 }
 
 

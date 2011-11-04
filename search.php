@@ -4,7 +4,7 @@ $searchquery = $_GET['query'];
 
 $start = "";
 if(isset($_GET['duration'])) {
-    $start = "&start=" . $_GET['duration'];
+    $start = "&duration=" . $_GET['duration'];
 }
 if((isset($_GET['type'])) && ($_GET['type'] != "")) {
     $type = $_GET['type'];

@@ -5,7 +5,7 @@ $viewport = @$_GET['port'];
 
 $start = "";
 if(isset($_GET['duration'])) {
-    $start = "&start=" . $_GET['duration'];
+    $start = "&duration=" . $_GET['duration'];
 }
 
 

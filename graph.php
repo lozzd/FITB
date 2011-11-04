@@ -3,8 +3,8 @@
 include_once('functions.php');
 
 # Set some defaults if they are not specified. 
-if (isset($_GET['start'])) {
-    $start = $_GET['start'];
+if (isset($_GET['duration'])) {
+    $start = $_GET['duration'];
 } else {
     $start = "-86400";
 }

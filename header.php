@@ -54,6 +54,15 @@
                     echo '<option ' . $selected . ' value="' . $hostname . '">' . $hostname . '</option>';
                 }
                 echo '</select>';
+                
+                # Include the duration from this page load so the zoomed time frame doesn't suddenly
+                # change when we change any filters in this form. 
+                foreach($_GET as $getvar => $getcontent) {
+                    if ($getvar == "duration") {
+                        echo '<input type="hidden" name="' . $getvar . '" value="' . $getcontent . '">';
+                    }
+                }
+ 
             ?>
         </form>
     </div>

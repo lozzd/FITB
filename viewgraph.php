@@ -10,7 +10,7 @@ $viewport = str_replace($viewhost. "-", "", $viewport);
 
 $start = "";
 if(isset($_GET['duration'])) {
-    $start = "&start=" . $_GET['duration'];
+    $start = "&duration=" . $_GET['duration'];
 }
 
 
