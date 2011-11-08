@@ -216,11 +216,16 @@ function htmlHostsInConfig() {
 
     # Prints HTML output of all the switches in the config
     echo "<ul id=\"navlinks\">";
+    $currentHost = @$_GET['host'];
     foreach ($pollhosts as $thishost) {
         if($thishost['showoninterface'] == true) {
             echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '">' . $thishost['prettyname'] . '</a>';
             foreach ($thishost['graphtypes'] as $thistype) {
-                echo '<ul>';
+                if ($currentHost == $thishost['prettyname']) {
+                    echo '<ul>';
+                } else {
+                    echo '<ul style="display: none;">';
+                }
                 echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '&type=' . $thistype . '">' . $thistype . '</a></li>';
                 echo '</ul>';
             }
