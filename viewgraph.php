@@ -22,7 +22,6 @@ if(isset($_GET['duration'])) {
 <title>FITB - View graph - <?php echo "$viewhost - $viewport - $viewtype" ?></title>
 <link rel="stylesheet" href="fitb.css" type="text/css" media="screen" /> 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-<meta http-equiv="refresh" content="60">
 </head>
 
 <body>

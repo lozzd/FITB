@@ -24,7 +24,23 @@
                     }
                 ?>
            </select>
+           <select name="autorefresh" onchange="this.form.submit();">
+                <option value="0">Auto Refresh</option>
+                <option value="60">1 minute</option>
+                <option value="120">2 minutes</option>
+                <option value="300">5 minutes</option>
+                <option value="600">10 minutes</option>
+                <option value="1800">30 minutes</option>
+           </select>
         </form>
+        <?php 
+        # If there's an autorefresh get variable, we want the page to automatically refresh. 
+        # 
+                if ($_GET['autorefresh'] != "" && $_GET['autorefresh'] != "0") {
+                    echo '<meta http-equiv="refresh" content="' . $_GET['autorefresh'] . '">';
+                }
+                
+        ?>
         <form action="search.php" style="margin-left:10px">
             <label>Search</label>
             <input type="text" name="query" value="<?php echo $_GET['query'] ?>">
