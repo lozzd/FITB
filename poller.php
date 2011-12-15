@@ -20,7 +20,8 @@ foreach ($pollhosts as $thishost) {
     if ($thishost['enabled'] == true) {
         logline("MASTER: Spawing polling child for {$thishost['prettyname']}", 1, $verbose);
         $cwd = dirname(__FILE__);
-        $command = "nohup /usr/bin/env php -f {$cwd}/poller_child.php {$thishost['prettyname']} >> {$cwd}/poller.log 2>&1 & echo $!";
+        $prettyname = escapeshellarg($thishost['prettyname']);
+        $command = "nohup /usr/bin/env php -f {$cwd}/poller_child.php {$prettyname} >> {$cwd}/poller.log 2>&1 & echo $!";
         $pid = shell_exec($command);
         logline("MASTER: Child spawned, PID is {$pid}", 1, $verbose);
     } else {
