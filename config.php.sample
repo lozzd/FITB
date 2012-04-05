@@ -21,8 +21,8 @@ $verbose = 1;
 # The path to your desired rrdtool binary.
 $path_rrdtool = "/usr/bin/rrdtool";
 
-# The path where you want to store your RRD files
-$path_rrd = "/var/lib/fitb/rrds/";
+# The path where you want to store your RRD files. The default is the "rrds" directory beneath this file.
+$path_rrd = dirname(__FILE__) . "/rrds/";
 
 # Database connection parameters
 $mysql_host = "localhost";

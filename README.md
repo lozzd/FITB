@@ -35,12 +35,8 @@ Screenshots and a guide to FITB are available here: [http://www.flickr.com/photo
 
         # mysql fitb < fitb.sql
 
-4. Create a directory for your RRD files. For example, /var/lib/fitb/rrds/
-    
-    Note: Make sure this directory is writeable by the user you wish to run the poller as. Either as you, or create
-    a new user just for FITB. Your webserver only needs read only access. 
-5. Edit config.php with your favourite editor and set the database connection information, and the path you created 
-for your RRDs. 
+4. Check permissions on the directory for your RRD files. By default, this is the "rrds" directory in the FITB root. Make sure this directory is writeable by the user you wish to run the poller as. Either as you, or create a new user just for FITB. Your webserver only needs read only access.
+5. Move config.php.sample to config.php, edit with your favourite editor and set the database connection information, and the path you created for your RRDs. 
 6. At this point you should be able to load FITB in your browser without errors. Reward yourself with a beverage. 
 
 ## Configuring switches
