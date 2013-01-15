@@ -13,6 +13,7 @@ FITB automatically polls every port on a list of switches you give it. It's feat
 * Precise polling: 1 minute poll intervals to make sure you never miss a spike in your network
 * Easy searching: Search both interface aliases and names, and filter down by graph type and host
 * Automatic discovery: FITB finds every port in use on the switch and graphs it, and stops when it goes down. 
+* Dynamic aggregate graph creation: shift click graphs to build on-the-fly aggregates and save them for later.
 
 Screenshots and a guide to FITB are available here: [http://www.flickr.com/photos/lozzd/sets/72157627375145065](http://www.flickr.com/photos/lozzd/sets/72157627375145065)
 
@@ -99,6 +100,7 @@ update the view instantly.
 There is a time period drop down in the top right that affects all the graphs in the current view. Due to FITB's 1 minute
 polling that means you can go down to a 5 minute view of any port. 
 
+Aggregate graphs can be created by shift-clicking desired component graphs. When one or more graphs have been added, a status indicator will appear on the bottom right of the page. Click the link in the status area to open the aggregate editor, fine tune your graph, and save for later. Note that this feature requires a modern browser.
 
 ## Known issues/limitations
 * Your hosts must support SNMPv2, SNMPv1 did not have the information/resolution I required so it was written with v2

@@ -79,67 +79,352 @@ function updateRRD($rrdname, $rrdfolder, $timestamp, $value) {
         return false;
     } else {
         return true;
-    } 
-
+    }
 }
 
-function printRRDgraphcmd($rrdname, $rrdfolder, $type = "bits", $start = "-86400", $end = "-60", $height = "120", $width = "500", $friendlytitle) {
-    global $path_rrdtool, $path_rrd;
+function getSubtypesForGraphType($type) {
+    switch($type) {
+        case 'bits':
+            return array('bits_in', 'bits_out');
+        case 'ucastpkts':
+            return array('ucastpkts_in', 'ucastpkts_out');
+        case 'errors':
+            return array('discards_in', 'errors_in', 'discards_out', 'errors_out');
+        case 'mcastpkts':
+            return array('mcastpkts_in', 'mcastpkts_out');
+        case 'bcastpkts':
+            return array('bcastpkts_in', 'bcastpkts_out');
 
-    $buildname = "{$path_rrd}{$rrdfolder}/{$rrdname}_{$type}.rrd";
+    }
+    return array($type);
+}
 
+function getDefaultSubtypeForGraphType($type) {
+    $subtypes = getSubtypesForGraphType($type);
+    return $subtypes[0];
+}
+
+function getGraphCmd($rrdname, $rrdfolder, $type, $start = "-86400", $end = "-60", $height = "120", $width = "500", $friendlytitle = "") {
+    $graphs_array = array();
+    $subtypes = getSubtypesForGraphType($type);
+
+    foreach ($subtypes as $subtype) {
+        $graphs_array[] = array(
+            'rrdname' => $rrdname,
+            'rrdfolder' => $rrdfolder,
+            'subtype' => $subtype
+        );
+    }
+    return getStackedGraphsCmd($graphs_array, $type, false, $start, $end, $height, $width, $friendlytitle);
+}
+
+function getStackedGraphsCmd($graphs_array, $type, $stack = false, $start = "-86400", $end = "-60", $height = "120", $width = "500", $friendlytitle = "") {
+    global $path_rrdtool;
+
+    $type_to_title = array('bits' => 'bits/sec', 'ucastpkts' => 'unicast packets/sec', 'errors' => 'Errors/sec', 'mcastpkts' => 'multicast packets/sec', 'bcastpkts' => 'broadcast packets/sec');
+    $type_to_label = array('bits' => 'bits per second', 'ucastpkts' => 'packets per sec', 'errors' => 'errors per sec', 'mcastpkts' => 'packets per sec', 'bcastpkts' => 'packets sec');
     if ($friendlytitle == "") {
-        $titlename = basename($rrdname);
+        $f = function($graph) { 
+            return $graph['rrdname'];
+        };
+        $titlename = implode(' | ', array_map($f, $graphs_array));
     } else {
         $titlename = $friendlytitle;
     }
+    $title = str_replace('"', '\"', $titlename . ' - ' . $type_to_title[$type]);
 
-    switch($type) {
-        case "bits":
-            # bits/sec
-            $rrdcmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$titlename} - bits/sec\" ";
-            $rrdcmd .= "--rigid --vertical-label='bits per second' --slope-mode --height={$height} --width={$width} --lower-limit=0 ";
-            $rrdcmd .= "DEF:a='{$buildname}':traffic_in:AVERAGE DEF:b='{$buildname}':traffic_out:AVERAGE CDEF:cdefa=a,8,* CDEF:cdefb=b,8,* ";
-            $rrdcmd .= 'AREA:cdefa#00CF00FF:"Inbound" GPRINT:cdefa:LAST:" Curr\:%8.2lf %s" GPRINT:cdefa:AVERAGE:"Ave\:%8.2lf %s" GPRINT:cdefa:MIN:"Min\:%8.2lf %s" GPRINT:cdefa:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:cdefb#002A97FF:"Outbound" GPRINT:cdefb:LAST:"Curr\:%8.2lf %s" GPRINT:cdefb:AVERAGE:"Ave\:%8.2lf %s" GPRINT:cdefb:MIN:"Min\:%8.2lf %s" GPRINT:cdefb:MAX:"Max\:%8.2lf %s\n"';
-            break;
-        case "ucastpkts":
-            # Unicast packets
-            $rrdcmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$titlename} - unicast packets/sec\" ";
-            $rrdcmd .= "--rigid --vertical-label='packets per second' --slope-mode --height={$height} --width={$width} --lower-limit=0 ";
-            $rrdcmd .= "DEF:a='{$buildname}':unicast_in:AVERAGE DEF:b='{$buildname}':unicast_out:AVERAGE ";
-            $rrdcmd .= 'AREA:a#FFF200FF:"Unicast In" GPRINT:a:LAST:" Curr\:%8.2lf %s" GPRINT:a:AVERAGE:"Ave\:%8.2lf %s" GPRINT:a:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:b#00234BFF:"Unicast Out" GPRINT:b:LAST:"Curr\:%8.2lf %s" GPRINT:b:AVERAGE:"Ave\:%8.2lf %s" GPRINT:b:MAX:"Max\:%8.2lf %s\n"';
-            break;
-        case "errors":
-            # Errors in/out and discards/in/out
-            $rrdcmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$titlename} - Errors/sec\" ";
-            $rrdcmd .= "--rigid --vertical-label='errors per second' --slope-mode --height={$height} --width={$width} --lower-limit=0 ";
-            $rrdcmd .= "DEF:a='{$buildname}':discards_in:AVERAGE DEF:b='{$buildname}':errors_in:AVERAGE DEF:c='{$buildname}':discards_out:AVERAGE DEF:d='{$buildname}':errors_out:AVERAGE ";
-            $rrdcmd .= 'LINE1:a#FFAB00FF:"Discards In" GPRINT:a:LAST:" Curr\:%8.2lf %s" GPRINT:a:AVERAGE:"Ave\:%8.2lf %s" GPRINT:a:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:b#F51D30FF:"Errors In" GPRINT:b:LAST:"   Curr\:%8.2lf %s" GPRINT:b:AVERAGE:"Ave\:%8.2lf %s" GPRINT:b:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:c#C4FD3DFF:"Discards Out" GPRINT:c:LAST:"Curr\:%8.2lf %s" GPRINT:c:AVERAGE:"Ave\:%8.2lf %s" GPRINT:c:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:d#00694AFF:"Errors Out" GPRINT:d:LAST:"  Curr\:%8.2lf %s" GPRINT:d:AVERAGE:"Ave\:%8.2lf %s" GPRINT:d:MAX:"Max\:%8.2lf %s\n" ';
-            break;
-        case "mcastpkts":
-            # Multicast packets
-            $rrdcmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$titlename} - multicast packets/sec\" ";
-            $rrdcmd .= "--rigid --vertical-label='packets per second' --slope-mode --height={$height} --width={$width} --lower-limit=0 ";
-            $rrdcmd .= "DEF:a='{$buildname}':multicast_in:AVERAGE DEF:b='{$buildname}':multicast_out:AVERAGE ";
-            $rrdcmd .= 'AREA:a#FFF200FF:"Multicast In" GPRINT:a:LAST:" Cur\:%8.2lf %s" GPRINT:a:AVERAGE:"Ave\:%8.2lf %s" GPRINT:a:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:b#00234BFF:"Multicast Out" GPRINT:b:LAST:"Cur\:%8.2lf %s" GPRINT:b:AVERAGE:"Ave\:%8.2lf %s" GPRINT:b:MAX:"Max\:%8.2lf %s\n"';
-            break;
-        case "bcastpkts":
-            # Broadcast packets
-            $rrdcmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$titlename} - broadcast packets/sec\" ";
-            $rrdcmd .= "--rigid --vertical-label='packets per second' --slope-mode --height={$height} --width={$width} --lower-limit=0 ";
-            $rrdcmd .= "DEF:a='{$buildname}':broadcast_in:AVERAGE DEF:b='{$buildname}':broadcast_out:AVERAGE ";
-            $rrdcmd .= 'AREA:a#99B898FF:"Broadcast In" GPRINT:a:LAST:" Cur\:%8.2lf %s" GPRINT:a:AVERAGE:"Ave\:%8.2lf %s" GPRINT:a:MAX:"Max\:%8.2lf %s\n" ';
-            $rrdcmd .= 'LINE1:b#00234BFF:"Broadcast Out" GPRINT:b:LAST:"Cur\:%8.2lf %s" GPRINT:b:AVERAGE:"Ave\:%8.2lf %s" GPRINT:b:MAX:"Max\:%8.2lf %s\n"';
-            break;
+    $idx = 0;
+    $data_cmds = '';
+    foreach ($graphs_array as $graph) {
+        if (isset($graph['opts'])) {
+            $opts = $graph['opts'];
+        } else {
+            $opts = array();
+        }
+
+        $data_cmds .= " " . getCommandForRRD(
+            $graph['rrdname'],
+            $graph['rrdfolder'],
+            $type,
+            $graph['subtype'],
+            $opts,
+            $stack,
+            $idx++
+        );
     }
 
+    $rrd_cmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$title}\" ";
+    $rrd_cmd .= "--rigid --vertical-label='{$type_to_label[$type]}' --slope-mode --height={$height} --width={$width} --lower-limit=0 ";
+    $rrd_cmd .= $data_cmds;
+    return $rrd_cmd;
+}
+
+function getDataColumnAndLabel($subtype) {
+    switch($subtype) {
+        case "bits_in": return array('data_column' => 'traffic_in', 'data_label' => 'Inbound ');
+        case "bits_out": return array('data_column' => 'traffic_out', 'data_label' => 'Outbound');
+        case "ucastpkts_in": return array('data_column' => 'unicast_in', 'data_label' => 'Unicast In ');
+        case "ucastpkts_out": return array('data_column' => 'unicast_out', 'data_label' => 'Unicast Out');
+        case "errors_in": return array('data_column' => 'errors_in', 'data_label' => 'Errors In   ');
+        case "errors_out": return array('data_column' => 'errors_out', 'data_label' => 'Errors Out  ');
+        case "discards_in": return array('data_column' => 'discards_in', 'data_label' => 'Discards In ');            
+        case "discards_out": return array('data_column' => 'discards_out', 'data_label' => 'Discards Out');
+        case "mcastpkts_in": return array('data_column' => 'multicast_in', 'data_label' => 'Multicast In ');
+        case "mcastpkts_out": return array('data_column' => 'multicast_out', 'data_label' => 'Multicast Out');
+        case "bcastpkts_in": return array('data_column' => 'broadcast_in', 'data_label' => 'Broadcast In ');
+        case "bcastpkts_out": return array('data_column' => 'broadcast_out', 'data_label' => 'Broadcast Out');
+    }
+}
+
+function getDefaultColor($type, $idx, $stack) {
+    if ($stack) {
+        // these should match the colors in fitb.js
+        $colors = array(
+            'bits' => array('#0A2868', '#FFCA00', '#EC4890', '#517CD7', '#00C169', '#D1F94C'),
+            'ucastpkts' => array('#2008E6', '#D401E2', '#00DFD6', '#08004E'),
+            'errors' => array('#30B6C9', '#FFFE39', '#AD34CF', '#09616D'),
+            'mcastpkts' => array('#53B0B8', '#7E65C7', '#C2F2C6', '#FFB472'),
+            'bcastpkts' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737')
+        );
+    } else {
+        $colors = array(
+            'bits' => array('#00CF00FF', '#002A97FF', '#C4FD3DFF', '#00694AFF'),
+            'ucastpkts' => array('#FFF200FF', '#00234BFF', '#C4FD3DFF', '#00694AFF'),
+            'errors' => array('#FFAB00FF', '#F51D30FF', '#C4FD3DFF', '#00694AFF'),
+            'mcastpkts' => array('#FFF200FF', '#00234BFF', '#C4FD3DFF', '#00694AFF'),
+            'bcastpkts' => array('#99B898FF', '#00234BFF', '#C4FD3DFF', '#00694AFF')
+        );
+    }
+    return $colors[$type][$idx % count($colors[$type])];
+}
+
+function getCommandForRRD($rrdname, $rrdfolder, $type, $subtype, $opts, $stack, $idx = 0) {
+    global $path_rrd;
+
+    $buildname = "{$path_rrd}{$rrdfolder}/{$rrdname}_{$type}.rrd";
+
+    if (isset($opts['graphing_method']) && $opts['graphing_method'] != '') {
+        $gm = $opts['graphing_method'];
+    } else {
+        if (!$stack && ($idx > 0 || $type == 'errors')) {
+            $gm = 'LINE1';
+        } else {
+            $gm = 'AREA';
+        }
+    }
+
+    if (isset($opts['color']) && $opts['color'] != '') {
+        $color = $opts['color'];
+    } else {
+        $color = getDefaultColor($type, $idx, $stack);
+    }
+
+    $data_column_label = getDataColumnAndLabel($subtype);
+    $data_column = $data_column_label['data_column'];
+
+    if (isset($opts['custom_label']) && $opts['custom_label'] != '') {
+        $data_label = $opts['custom_label'];
+    } else {
+        // if the graphs are stacked, then they'd all have the same label. lets just use the rrd name by default.
+        if ($stack) {
+            $data_label = $rrdname;
+        } else {
+            $data_label = $data_column_label['data_label'];
+        }
+    }
+    $data_label = str_replace('"', '\"', $data_label);
+
+    $def = "a{$idx}"; //avoid collisions by using idx to name data
+    $rrdcmd = "DEF:{$def}='{$buildname}':{$data_column}:AVERAGE ";
+    $data_key = $def;
+    if ($type == "bits") {
+        $cdef = "${def},8,*"; // bits/sec
+        $rrdcmd .= "CDEF:cdef{$def}={$cdef} ";
+        $data_key = "cdef{$def}";
+    }
+    
+    if ($stack) { 
+        $stk = ":STACK";
+    } else {
+        $stk = "";
+    }
+    $rrdcmd .= "{$gm}:{$data_key}{$color}:\"{$data_label}\"{$stk} ";
+
+    $rrdcmd .= "GPRINT:{$data_key}:LAST:\"Curr\:%8.2lf %s\" ";
+    $rrdcmd .= "GPRINT:{$data_key}:AVERAGE:\"Ave\:%8.2lf %s\" ";
+    if ($type == 'bits')  { 
+        $rrdcmd .= "GPRINT:{$data_key}:MIN:\"Min\:%8.2lf %s\" ";
+    }
+    $rrdcmd .= "GPRINT:{$data_key}:MAX:\"Max\:%8.2lf %s\\n\" ";
+    
     return $rrdcmd;
+}
+
+function getAggregateGraphsArrayFromRequest($request_data) {
+    $rrdnames = explode('|', $request_data['rrdname']);
+    $hosts = explode('|', $request_data['host']);
+    $type = $request_data['type'];
+
+    $graph_count = count($rrdnames);
+
+    if (isset($request_data['subtype'])) {
+        $subtypes = explode('|', $request_data['subtype']);
+        if (count($subtypes) < $graph_count) {
+            $subtypes = array_merge($subtypes, array_fill(count($subtypes) - 1, $graph_count - count($subtypes), getDefaultSubtypeForGraphType($type)));
+        }
+    } else {
+        $subtypes = array_fill(0, $graph_count, getDefaultSubtypeForGraphType($type));
+    }
+
+    $colors = array();
+    if (isset($request_data['color'])) {
+        $colors = explode('|', $request_data['color']);
+        if (count($colors) < $graph_count) {
+            $colors = array_merge($colors, array_fill(count($colors) - 1, $graph_count - count($colors), ''));
+        }
+    }
+    
+    $graphing_methods = array();
+    if (isset($request_data['graphing_method'])) {
+        $graphing_methods = explode('|', $request_data['graphing_method']);
+        if (count($graphing_methods) < $graph_count) {
+            $graphing_methods = array_merge($graphing_methods, array_fill(count($graphing_methods) - 1, $graph_count - count($graphing_methods), ''));
+        }
+    }
+
+    $custom_labels = array();
+    if (isset($request_data['custom_label'])) {
+        $custom_labels = explode('|', $request_data['custom_label']);
+        if (count($custom_labels) < $graph_count) {
+            $custom_labels = array_merge($custom_labels, array_fill(count($custom_labels) - 1, $graph_count - count($custom_labels), ''));
+        }
+    }
+
+    if (count($rrdnames) == $graph_count && count($hosts) == $graph_count) {
+        $graphs_array = array();
+        foreach (range(0, $graph_count - 1) as $i) {
+            $graphs_array[] = array(
+                'rrdname' => $rrdnames[$i],
+                'rrdfolder' => $hosts[$i],
+                'subtype' => ($subtypes[$i] == "" ? getDefaultSubtypeForGraphType($type) : $subtypes[$i]),
+                'opts' => array()
+            );
+            if (count($colors) > $i) {
+                $graphs_array[$i]['opts']['color'] = $colors[$i];
+            }
+            if (count($graphing_methods) > $i) {
+                $graphs_array[$i]['opts']['graphing_method'] = $graphing_methods[$i];
+            }
+            if (count($custom_labels) > $i) {
+                $graphs_array[$i]['opts']['custom_label'] = $custom_labels[$i];
+            }
+        }
+        return $graphs_array;
+    }
+    return null;   
+}
+
+function saveAggregate($graphs_array, $meta) {
+    if (!connectToDB() || count($graphs_array) < 1) {
+        return false;
+    }
+    $res = mysql_query('START TRANSACTION');
+
+    $friendlytitle = $meta['friendlytitle'] ? $meta['friendlytitle'] : null;
+    $type = $meta['type'];
+    $stack = $meta['stack'] !== false ? '1' : '0';
+    $fields = array(
+        $friendlytitle ? "'" . mysql_escape_string($friendlytitle) . "'" : 'NULL',
+        "'" . mysql_escape_string($type) . "'",
+        "'" . mysql_escape_string($stack) . "'"
+    );
+    $query = "INSERT INTO aggregates (friendlytitle, type, stack) VALUES (" . implode(',', $fields) . ")";
+                
+    $inserted = mysql_query($query);
+
+    if ($inserted) {
+        $agg_id = mysql_insert_id();
+
+        $inserts = array();
+        foreach ($graphs_array as $g) {
+            $options = 'NULL';
+            if ($g['opts'] != null) {
+                $options = mysql_real_escape_string(json_encode($g['opts']));
+            }
+
+            $fields = array(
+                $agg_id,
+                "'" . mysql_real_escape_string($g['rrdfolder']) . "'",
+                "'" . mysql_real_escape_string($g['rrdname']) . "'",
+                $g['subtype'] ? "'" . mysql_real_escape_string($g['subtype']) . "'" : 'NULL',
+                $g['opts'] ? "'" . mysql_real_escape_string(json_encode($g['opts'])) . "'" : 'NULL'
+            );
+            $inserts[] = '(' . implode(',', $fields) . ')';
+        }
+        $query = "INSERT INTO aggregate_parts (aggregate_id, host, rrdname, subtype, options) VALUES " . implode(',', $inserts);
+        $inserted = mysql_query($query);
+    }
+
+    if ($inserted) {
+        $inserted = mysql_query('COMMIT');
+        return $agg_id;
+    } else {
+        $res = mysql_query('ROLLBACK');
+    }
+    return null;
+}
+
+function deleteAggregate($aggregate_id) {
+    if (!connectToDB()) {
+        return false;
+    }
+    
+    $res = mysql_query('START TRANSACTION');
+    
+    $query = 'DELETE FROM aggregates WHERE aggregate_id = "'.mysql_real_escape_string($aggregate_id).'"';
+    $deleted = mysql_query($query);
+    
+    if ($deleted) {
+        $query = 'DELETE FROM aggregate_parts WHERE aggregate_id = "'.mysql_real_escape_string($aggregate_id).'"';
+        $deleted = mysql_query($query);
+    }
+    
+    if ($deleted) {
+        $deleted = mysql_query('COMMIT');
+    } else {
+        $res = mysql_query('ROLLBACK');
+    }
+    return $deleted;
+}
+
+function getAggregateData($agg_id) {
+    connectToDB();
+
+    $result = mysql_query('SELECT * FROM aggregates WHERE aggregate_id='.mysql_real_escape_string($agg_id));
+    if (mysql_num_rows($result) == 1) {
+        $agg = mysql_fetch_assoc($result);
+        $meta = array(
+            'friendlytitle' => !is_null($agg['friendlytitle']) ? $agg['friendlytitle'] : '',
+            'type' => $agg['type'],
+            'stack' => $agg['stack'] == '1'
+        );
+
+        $result = mysql_query('SELECT * FROM aggregate_parts WHERE aggregate_id='.mysql_real_escape_string($agg_id));
+        $graphs_array = array();
+        if (mysql_num_rows($result) > 0) {
+            while ($part = mysql_fetch_assoc($result)) {
+                $graphs_array[] = array(
+                    'rrdfolder' => $part['host'],
+                    'rrdname' => $part['rrdname'],
+                    'subtype' => $part['subtype'],
+                    'opts' => json_decode($part['options'], true)
+                );
+            }
+        }
+        return array('graphs_array' => $graphs_array, 'meta' => $meta);
+    }
+
+    return null;
 }
 
 function purgeOld($loglevel) {
@@ -211,29 +496,49 @@ function connectToDB() {
     }
 }
 
-function htmlHostsInConfig() {
+function getAllEnabledHosts() {
     global $pollhosts;
+    $isEnabled = function($host) {
+        return $host['enabled'];
+    };
+    return array_filter($pollhosts, $isEnabled);
+}
 
+function getPortsForHostAndType($host, $type) {
+    $ports = array();
+    if(connectToDB()) {
+        $result = mysql_query('SELECT * FROM ports WHERE host like "%' . mysql_real_escape_string($host). '%" AND graphtype like "%' . mysql_real_escape_string($type) . '%" ORDER BY lastpoll DESC, safename ASC');
+        if (mysql_num_rows($result) > 0) {
+            while ($row = mysql_fetch_assoc($result)) {
+                $ports[] = $host . '-' . $row["safename"];
+            }
+        }
+        return $ports;
+    }
+    return array();
+}
+
+function htmlHostsInConfig() {
     # Prints HTML output of all the switches in the config
     echo "<ul id=\"navlinks\">";
+    echo '<li><a href="aggregates.php">aggregate graphs</a>';
     $currentHost = @$_GET['host'];
-    foreach ($pollhosts as $thishost) {
+    foreach (getAllEnabledHosts() as $thishost) {
         if($thishost['showoninterface'] == true) {
             echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '">' . $thishost['prettyname'] . '</a>';
-            foreach ($thishost['graphtypes'] as $thistype) {
-                if ($currentHost == $thishost['prettyname']) {
-                    echo '<ul>';
-                } else {
-                    echo '<ul style="display: none;">';
-                }
-                echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '&type=' . $thistype . '">' . $thistype . '</a></li>';
-                echo '</ul>';
+            if ($currentHost == $thishost['prettyname']) {
+                echo '<ul>';
+            } else {
+                echo '<ul style="display: none;">';
             }
+            foreach ($thishost['graphtypes'] as $thistype) {
+                echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '&type=' . $thistype . '">' . $thistype . '</a></li>';
+            }
+            echo '</ul>';
             echo '</li>';
         }
     }
     echo "</ul>";
-
 }
 
 function htmlLastPollerTime() {

@@ -21,7 +21,8 @@ if(isset($_GET['duration'])) {
 <head>
 <title>FITB - View graph - <?php echo "$viewhost - $viewport - $viewtype" ?></title>
 <link rel="stylesheet" href="fitb.css" type="text/css" media="screen" /> 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
 </head>
 
 <body>
@@ -37,7 +38,7 @@ if(isset($_GET['duration'])) {
             if(mysql_num_rows($result) > 0) {
                 $row = mysql_fetch_assoc($result);
                 echo "<div>";
-                echo "<p>Port Name: <a href=\"viewport.php?host={$row['host']}&port={$row['safename']}\">{$row['name']}</a> </p>";
+                echo "<p>Port Name: <a href=\"viewhost.php?host={$row['host']}&port={$row['safename']}\">{$row['name']}</a> </p>";
                 echo "<p>Port Alias: <pre>{$row['alias']}</pre></p>";
                 echo '<p>On host: <a href="viewhost.php?host=' . $row['host'] . '">' . $row['host'] . '</a>';
                 echo "<p>Status: "; 
@@ -51,7 +52,7 @@ if(isset($_GET['duration'])) {
                 # Insert the graph
                 $friendlytitle = urlencode("{$viewhost} - {$row['name']} ({$row['alias']})");
                     $basegraphurl = "graph.php?host={$viewhost}&rrdname={$viewhost}-{$row['safename']}&type={$row['graphtype']}{$start}&friendlytitle={$friendlytitle}";
-                    echo '<img src="' . $basegraphurl . '&height=300&width=800" alt="'.$row['alias'].'">';
+                    echo '<img class="graph-img" src="' . $basegraphurl . '&height=300&width=800" alt="'.$row['alias'].'">';
             } else {
                 echo "Port/host/type combination not found! Was it polled yet?";
             }
@@ -60,6 +61,15 @@ if(isset($_GET['duration'])) {
     <div>
 </div>
 
+<?php include('agg_builder_template.php'); ?>
+<script type="text/javascript" src="fitb.js"></script>
+<script type="text/javascript">
+GraphManager.HOSTS = <?php echo json_encode(getAllEnabledHosts()); ?>;
+jQuery(function($) {
+    var gm = new GraphManager();
+    gm.init('#main img.graph-img');
+}(jQuery));
+</script>
 
 </body>
 </html>
