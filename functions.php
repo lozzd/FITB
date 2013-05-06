@@ -596,6 +596,8 @@ function snmptable($host, $community, $oid) {
     snmp_set_oid_numeric_print(TRUE);
     snmp_set_quick_print(TRUE);
     snmp_set_enum_print(TRUE);
+    snmp_set_valueretrieval(SNMP_VALUE_PLAIN );
+    snmp_set_oid_output_format(SNMP_OID_OUTPUT_NUMERIC);
 
     $retval = array();
     if(!$raw = snmp2_real_walk($host, $community, $oid)) {
