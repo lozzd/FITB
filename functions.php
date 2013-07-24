@@ -41,11 +41,11 @@ function getGraphDefinition($graphtype) {
 }
 
 function findOrCreateRRD($rrdname, $rrdfolder, $datasources) {
-    global $path_rrdtool, $path_rrd;
+    global $path_rrdtool, $path_rrd, $RRA_average, $RRA_max;
 
-    # Feel free to adjust these RRA definitions. We're storing 2 weeks at 60 second accuracy. 
-    $RRAdef = "RRA:AVERAGE:0.5:1:1209600 RRA:AVERAGE:0.5:24:244 RRA:AVERAGE:0.5:168:244 RRA:AVERAGE:0.5:672:244 RRA:AVERAGE:0.5:5760:1827 ";
-    $RRAdef .= "RRA:MAX:0.5:1:1209600 RRA:MAX:0.5:24:244 RRA:MAX:0.5:168:244 RRA:MAX:0.5:672:244 RRA:MAX:0.5:5760:1827";
+    # Adjust in config.php
+    $RRAdef = $RRA_average;
+    $RRAdef .= $RRA_max;
 
     if (!file_exists($path_rrd . $rrdfolder . "/" .  $rrdname)) {
         # RRD file does not exist, we need to send a create command
