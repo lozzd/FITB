@@ -3,6 +3,11 @@
 include_once('functions.php');
 
 # Set some defaults if they are not specified. 
+if (isset($_GET['debug']) && is_numeric($_GET['debug'])) {
+  $debug =  $_GET['debug'];
+} else {
+  $debug = 0;
+}
 if (isset($_GET['duration'])) {
     $start = $_GET['duration'];
 } else {
@@ -72,4 +77,15 @@ header ("Cache-Control: no-cache, must-revalidate");   // HTTP/1.1
 header ("Pragma: no-cache");                     // HTTP/1.0
 
 header ("Content-type: image/png");
-passthru($rrdtoolcmd);
+
+if ($debug >= 2) {
+  header ("Content-type: text/html");
+  echo $rrdtoolcmd;
+}
+else {
+  if ($debug >= 1) {
+    error_log("rrdtool graph command:" . $rrdtoolcmd);
+  }
+  passthru($rrdtoolcmd);
+}
+
