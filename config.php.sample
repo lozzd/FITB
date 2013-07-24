@@ -25,9 +25,9 @@ $path_rrdtool = "/usr/bin/rrdtool";
 $path_rrd = dirname(__FILE__) . "/rrds/";
 
 
-# Feel free to adjust these RRA definitions. We're storing 2 weeks at 60 second accuracy.
-$RRA_average = "RRA:AVERAGE:0.5:1:1209600 RRA:AVERAGE:0.5:24:244 RRA:AVERAGE:0.5:168:244 RRA:AVERAGE:0.5:672:244 RRA:AVERAGE:0.5:5760:1827 ";
-$RRA_max     = "RRA:MAX:0.5:1:1209600 RRA:MAX:0.5:24:244 RRA:MAX:0.5:168:244 RRA:MAX:0.5:672:244 RRA:MAX:0.5:5760:1827";
+# Feel free to adjust these RRA definitions. Default stores 1 month at 1 minute resolution, and 1 year at 60 minutes
+$RRA_average = "RRA:AVERAGE:0.5:1:44640 RRA:AVERAGE:0.5:60:8760 ";
+$RRA_max     = "RRA:MAX:0.5:1:44640 RRA:MAX:0.5:60:8760";
 
 
 # Database connection parameters
