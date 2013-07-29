@@ -57,9 +57,10 @@ function findOrCreateRRD($rrdname, $rrdfolder, $datasources) {
             }
         }
         $oneminuteago = time() - 60;
-        exec("{$path_rrdtool} create {$path_rrd}{$rrdfolder}/{$rrdname} --step 60 --start {$oneminuteago} {$datasources} {$RRAdef}", $rrdoutput, $rrdreturn);
+        $cmd = "{$path_rrdtool} create {$path_rrd}{$rrdfolder}/{$rrdname} --step 60 --start {$oneminuteago} {$datasources} {$RRAdef}";
+        exec($cmd, $rrdoutput, $rrdreturn);
         if ($rrdreturn != 0) {
-            echo "RRD failed: " . print_r($rrdoutput) . "\n";
+            echo "RRD cmd: " . $cmd . " failed: " . print_r($rrdoutput) . "\n";
             return false;
         } else {
             return true;
