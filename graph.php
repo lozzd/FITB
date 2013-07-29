@@ -6,7 +6,7 @@ include_once('functions.php');
 if (isset($_GET['duration'])) {
     $start = $_GET['duration'];
 } else {
-    $start = "-86400";
+    $start = $default_duration;
 }
 
 if (isset($_GET['end'])) {
