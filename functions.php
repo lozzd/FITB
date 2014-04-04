@@ -120,7 +120,7 @@ function getGraphCmd($rrdname, $rrdfolder, $type, $start = "-86400", $end = "-60
 }
 
 function getStackedGraphsCmd($graphs_array, $type, $stack = false, $start = "-86400", $end = "-60", $height = "120", $width = "500", $friendlytitle = "") {
-    global $path_rrdtool;
+    global $path_rrdtool, $path_rrd;
 
     $type_to_title = array('bits' => 'bits/sec', 'ucastpkts' => 'unicast packets/sec', 'errors' => 'Errors/sec', 'mcastpkts' => 'multicast packets/sec', 'bcastpkts' => 'broadcast packets/sec');
     $type_to_label = array('bits' => 'bits per second', 'ucastpkts' => 'packets per sec', 'errors' => 'errors per sec', 'mcastpkts' => 'packets per sec', 'bcastpkts' => 'packets sec');
@@ -143,15 +143,18 @@ function getStackedGraphsCmd($graphs_array, $type, $stack = false, $start = "-86
             $opts = array();
         }
 
-        $data_cmds .= " " . getCommandForRRD(
-            $graph['rrdname'],
-            $graph['rrdfolder'],
-            $type,
-            $graph['subtype'],
-            $opts,
-            $stack,
-            $idx++
-        );
+        # Only generate graph commands for RRD files that exist, in case the ports go down later on (or don't yet exist) 
+        if (file_exists("{$path_rrd}{$graph['rrdfolder']}/{$graph['rrdname']}_{$type}.rrd")) {
+            $data_cmds .= " " . getCommandForRRD(
+                $graph['rrdname'],
+                $graph['rrdfolder'],
+                $type,
+                $graph['subtype'],
+                $opts,
+                $stack,
+                $idx++
+            );
+        }
     }
 
     $rrd_cmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$title}\" ";
@@ -640,3 +643,4 @@ function snmptable($host, $community, $oid) {
     }
     return($retval);
 }
+
