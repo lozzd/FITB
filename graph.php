@@ -11,7 +11,7 @@ if (isset($_GET['debug']) && is_numeric($_GET['debug'])) {
 if (isset($_GET['duration'])) {
     $start = $_GET['duration'];
 } else {
-    $start = $default_duration;
+    $start = isset($default_duration) ? $default_duration : -86400 ;
 }
 
 if (isset($_GET['end'])) {
