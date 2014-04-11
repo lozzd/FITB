@@ -43,7 +43,14 @@ function getGraphDefinition($graphtype) {
 function findOrCreateRRD($rrdname, $rrdfolder, $datasources) {
     global $path_rrdtool, $path_rrd, $RRA_average, $RRA_max;
 
-    # Adjust in config.php
+    # The RRA configuration is pulled in from the config.php now, but there are still defaults set 
+    # here for people who are using older installations. 
+    if (!isset($RRA_average)) {
+        $RRA_average = "RRA:AVERAGE:0.5:1:1209600 RRA:AVERAGE:0.5:24:244 RRA:AVERAGE:0.5:168:244 RRA:AVERAGE:0.5:672:244 RRA:AVERAGE:0.5:5760:1827 ";
+    }
+    if (!isset($RRA_max)) {
+        $RRA_max = "RRA:MAX:0.5:1:1209600 RRA:MAX:0.5:24:244 RRA:MAX:0.5:168:244 RRA:MAX:0.5:672:244 RRA:MAXx:0.5:5760:1827";
+    }
     $RRAdef = $RRA_average;
     $RRAdef .= $RRA_max;
 
