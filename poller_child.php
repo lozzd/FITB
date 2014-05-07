@@ -48,10 +48,10 @@ if( $pollplatform == 'c3560e' || $pollplatform == 'c3560x' ) {
 	#$memfree    = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
 	$memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
 } elseif($pollplatform == 'nexus5000') {
-        # temp oid not supported on a 5k
+        # temp oid not supported on a 5k,  also set timeout to 5 sec as its slow to return
 	#$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
-        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1");
-        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");  
+        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1", 5000000);
+        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.13.1", 5000000);  
 } elseif($pollplatform == 'c4000') {
 	#air outlet temp
         $temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.6");
@@ -64,8 +64,8 @@ if( $pollplatform == 'c3560e' || $pollplatform == 'c3560x' ) {
 #logline("$ifEntry" , 1, $verbose);
 #print_r($ifXEntry);
 logline("snmp2_get returned temp as temperature {$temp}" ,1 ,$verbose);
-logline("snmp2_get returned temp as cpu {$cpu1minrev}" ,1 ,$verbose);
-logline("snmp2_get returned temp as memfree {$memfree}" ,1 ,$verbose);
+logline("snmp2_get returned cpu as cpu {$cpu1minrev}" ,1 ,$verbose);
+logline("snmp2_get returned memfree as memfree {$memfree}" ,1 ,$verbose);
 
 
 logline("{$pollprettyhost} - SNMP poll complete", 1, $verbose);
