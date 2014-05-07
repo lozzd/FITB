@@ -31,6 +31,7 @@ Screenshots and a guide to FITB are available here: [http://www.flickr.com/photo
 
         mysql> create database fitb;
         mysql> grant all on fitb.* to fitbuser@localhost IDENTIFIED BY 'f1tbP4ss';
+	mysql> flush privileges;
 
 3. Load the database structure into your database:
 
@@ -50,7 +51,7 @@ Configuring switches in FITB is designed to be as painless as possible. The proc
 
 The config line per switch is made up of the following:
 
-    "switchname" => array("prettyname" => "switchname", "enabled" => true, "showoninterface" => true, "ip" => "switchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors')),
+    "switchname" => array("prettyname" => "switchname", "enabled" => true, "showoninterface" => true, "ip" => "switchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors'), "altgraphtypes" => array('cpu1minrev', 'memfree', 'temp')),
 
 * switchname - The name used for the config file. 
 * prettyname - Generally keep this the same as above. Keep it simple.. It is used for the filename and in the interface
@@ -64,6 +65,10 @@ The config line per switch is made up of the following:
     * errors - Errors/sec in and out, and discards/sec in and out
     * mcastpkts - Multicast packets/sec, in and out. 
     * bcastpkts - Broadcast packets/sec, in and out
+* Optional: altgraphtypes - An array of the type of graphs that are not interface stats for this switch
+    * cpu1minrev - 1 min cpu average
+    * memfree -  how much memory is left free
+    * temp - chassis temp or exhaust temp of your switch
 
 ## Setting up polling
 
