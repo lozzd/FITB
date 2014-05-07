@@ -2,6 +2,10 @@
 # Functions that help us work! 
 # Anything required to get the job done goes in here. 
 
+# turn on facist debugging
+ini_set('display_errors', 'On');
+error_reporting(E_ALL);
+
 # include our config file
 include_once('config.php');
 
@@ -32,6 +36,21 @@ function getGraphDefinition($graphtype) {
         $graphdefinition["datasources"] = array("inbroadcast", "outbroadcast");
         $graphdefinition["filesuffix"] = "bcastpkts";
         break;
+    case "cpu1minrev":
+        $graphdefinition["rrddef"] = "DS:cpu1minrev:GAUGE:120:0:100";
+        $graphdefinition["datasources"] = "cpu1minrev";
+        $graphdefinition["filesuffix"] = "cpu1minrev";
+        break;
+    case "memfree":
+        $graphdefinition["rrddef"] = "DS:memfree:GAUGE:120:0:5120000000";
+        $graphdefinition["datasources"] = "memfree";
+        $graphdefinition["filesuffix"] = "memfree";
+        break; 
+    case "temp":
+        $graphdefinition["rrddef"] = "DS:temp:GAUGE:120:0:80";
+        $graphdefinition["datasources"] = "temp";
+        $graphdefinition["filesuffix"] = "temp";
+        break; 
     default:
         echo "FATAL ERROR: Graph type {$graphtype} is not understood";
         return false;
@@ -57,6 +76,7 @@ function findOrCreateRRD($rrdname, $rrdfolder, $datasources) {
     if (!file_exists($path_rrd . $rrdfolder . "/" .  $rrdname)) {
         # RRD file does not exist, we need to send a create command
         # Check the containing folder exists first
+	echo "RRD file does not exist.";
         if (!is_dir($path_rrd . $rrdfolder)) {
             if(!mkdir($path_rrd . $rrdfolder, 0777, true)) {
                 echo "Making RRD path {$path_rrd}{$rrdfolder} failed!";
@@ -66,6 +86,8 @@ function findOrCreateRRD($rrdname, $rrdfolder, $datasources) {
         $oneminuteago = time() - 60;
         $cmd = "{$path_rrdtool} create {$path_rrd}{$rrdfolder}/{$rrdname} --step 60 --start {$oneminuteago} {$datasources} {$RRAdef}";
         exec($cmd, $rrdoutput, $rrdreturn);
+        # uncomment this to debug the rrdtool command line
+	#echo "{$path_rrdtool} create {$path_rrd}{$rrdfolder}/{$rrdname} --step 60 --start {$oneminuteago} {$datasources} {$RRAdef}";
         if ($rrdreturn != 0) {
             echo "RRD cmd: " . $cmd . " failed: " . print_r($rrdoutput) . "\n";
             return false;
@@ -79,11 +101,15 @@ function findOrCreateRRD($rrdname, $rrdfolder, $datasources) {
 }
 
 function updateRRD($rrdname, $rrdfolder, $timestamp, $value) {
+	# values is the insertvalues var from poller_child which is the value of the metric via snmp
     global $path_rrdtool, $path_rrd;
 
     exec("{$path_rrdtool} update {$path_rrd}{$rrdfolder}/{$rrdname} {$timestamp}:{$value}", $rrdoutput, $rrdreturn);
+	logline("RRD exec was: {$path_rrdtool} update {$path_rrd}{$rrdfolder}/{$rrdname} {$timestamp}:{$value} END", 1, $verbose);
+	echo "$path_rrdtool update $path_rrd $rrdfolder/$rrdname $timestamp:$value  END";
     if ($rrdreturn != 0) {
         echo "RRD failed: " . print_r($rrdoutput) . "\n";
+        logline("RRD failed: print_r($rrdoutput)} .", 0, $verbose);
         return false;
     } else {
         return true;
@@ -102,7 +128,12 @@ function getSubtypesForGraphType($type) {
             return array('mcastpkts_in', 'mcastpkts_out');
         case 'bcastpkts':
             return array('bcastpkts_in', 'bcastpkts_out');
-
+        case 'temp':
+            return array('temp');
+        case 'cpu1minrev':
+            return array('cpu1minrev');
+        case 'memfree':
+            return array('memfree');
     }
     return array($type);
 }
@@ -123,14 +154,15 @@ function getGraphCmd($rrdname, $rrdfolder, $type, $start = "-86400", $end = "-60
             'subtype' => $subtype
         );
     }
+	# OMG this is what gets called in the if loop just above where this func is called in graph.php
     return getStackedGraphsCmd($graphs_array, $type, false, $start, $end, $height, $width, $friendlytitle);
 }
 
 function getStackedGraphsCmd($graphs_array, $type, $stack = false, $start = "-86400", $end = "-60", $height = "120", $width = "500", $friendlytitle = "") {
     global $path_rrdtool, $path_rrd;
 
-    $type_to_title = array('bits' => 'bits/sec', 'ucastpkts' => 'unicast packets/sec', 'errors' => 'Errors/sec', 'mcastpkts' => 'multicast packets/sec', 'bcastpkts' => 'broadcast packets/sec');
-    $type_to_label = array('bits' => 'bits per second', 'ucastpkts' => 'packets per sec', 'errors' => 'errors per sec', 'mcastpkts' => 'packets per sec', 'bcastpkts' => 'packets sec');
+    $type_to_title = array('bits' => 'bits/sec', 'ucastpkts' => 'unicast packets/sec', 'errors' => 'Errors/sec', 'mcastpkts' => 'multicast packets/sec', 'bcastpkts' => 'broadcast packets/sec', 'temp' => 'Temp Celius', 'cpu1minrev' => 'CPU 1min', 'freemem' => 'Free Memory');
+    $type_to_label = array('bits' => 'bits per second', 'ucastpkts' => 'packets per sec', 'errors' => 'errors per sec', 'mcastpkts' => 'packets per sec', 'bcastpkts' => 'packets sec', 'temp' => 'Temperature C', 'cpu1minrev' => '%CPU', 'memfree' => 'Free bits');
     if ($friendlytitle == "") {
         $f = function($graph) { 
             return $graph['rrdname'];
@@ -149,19 +181,38 @@ function getStackedGraphsCmd($graphs_array, $type, $stack = false, $start = "-86
         } else {
             $opts = array();
         }
-
         # Only generate graph commands for RRD files that exist, in case the ports go down later on (or don't yet exist) 
-        if (file_exists("{$path_rrd}{$graph['rrdfolder']}/{$graph['rrdname']}_{$type}.rrd")) {
-            $data_cmds .= " " . getCommandForRRD(
-                $graph['rrdname'],
-                $graph['rrdfolder'],
-                $type,
-                $graph['subtype'],
-                $opts,
-                $stack,
-                $idx++
-            );
-        }
+	#error_log("the type is " . $type );
+	if( $type == 'temp' || $type == 'cpu1minrev' || $type == 'memfree' ) {
+	#error_log("functions.php line 183:  entered the IS temp, cpu, mem loop");
+	#error_log("just before entering the file exists loop, we are seeing the file as: $path_rrd{$graph['rrdfolder']}/{$graph['rrdname']}");
+          if (file_exists("{$path_rrd}{$graph['rrdfolder']}/{$graph['rrdname']}.rrd")) {
+	      #error_log("entering existing file check in getstackedgraphscmd and the file name we are looking for is: " . $path_rrd . $graph['rrdfolder'] . "/" . $graph['rrdname'] . ".rrd" );
+              $data_cmds .= " " . getaltCommandForRRD(
+                  $graph['rrdname'],
+                  $graph['rrdfolder'],
+                  $type,
+                  $graph['subtype'],
+                  $opts,
+                  $stack,
+                  $idx++
+              );
+          }  
+	} else {
+		#error_log(" entered into the regular bits section");
+	      if (file_exists("{$path_rrd}{$graph['rrdfolder']}/{$graph['rrdname']}_{$type}.rrd")) {
+	      #error_log("entering existing file check in getstackedgraphscmd and the file name we are looking for is: " . $path_rrd . $graph['rrdfolder'] . "/" . $graph['rrdname'] . ".rrd" );
+              $data_cmds .= " " . getCommandForRRD(
+                  $graph['rrdname'],
+                  $graph['rrdfolder'],
+                  $type,
+                  $graph['subtype'],
+                  $opts,
+                  $stack,
+                  $idx++
+              );
+          } 
+	}
     }
 
     $rrd_cmd = "{$path_rrdtool} graph - --imgformat=PNG --font TITLE:8: --start={$start} --end={$end} --title=\"{$title}\" ";
@@ -184,6 +235,9 @@ function getDataColumnAndLabel($subtype) {
         case "mcastpkts_out": return array('data_column' => 'multicast_out', 'data_label' => 'Multicast Out');
         case "bcastpkts_in": return array('data_column' => 'broadcast_in', 'data_label' => 'Broadcast In ');
         case "bcastpkts_out": return array('data_column' => 'broadcast_out', 'data_label' => 'Broadcast Out');
+	case "temp": return array('data_column' => 'temp', 'data_label' => 'Temperature');
+	case "cpu1minrev": return array('data_column' => 'cpu1minrev', 'data_label' => 'CPU 1min');
+	case "memfree": return array('data_column' => 'memfree', 'data_label' => 'Free Memory');
     }
 }
 
@@ -195,7 +249,10 @@ function getDefaultColor($type, $idx, $stack) {
             'ucastpkts' => array('#2008E6', '#D401E2', '#00DFD6', '#08004E'),
             'errors' => array('#30B6C9', '#FFFE39', '#AD34CF', '#09616D'),
             'mcastpkts' => array('#53B0B8', '#7E65C7', '#C2F2C6', '#FFB472'),
-            'bcastpkts' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737')
+            'bcastpkts' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'),
+            'temp' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'),
+            'cpu1minrev' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'),
+            'memfree' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737')
         );
     } else {
         $colors = array(
@@ -203,7 +260,10 @@ function getDefaultColor($type, $idx, $stack) {
             'ucastpkts' => array('#FFF200FF', '#00234BFF', '#C4FD3DFF', '#00694AFF'),
             'errors' => array('#FFAB00FF', '#F51D30FF', '#C4FD3DFF', '#00694AFF'),
             'mcastpkts' => array('#FFF200FF', '#00234BFF', '#C4FD3DFF', '#00694AFF'),
-            'bcastpkts' => array('#99B898FF', '#00234BFF', '#C4FD3DFF', '#00694AFF')
+            'bcastpkts' => array('#99B898FF', '#00234BFF', '#C4FD3DFF', '#00694AFF'),
+	    'temp' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'),
+            'cpu1minrev' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'),
+            'memfree' => array('#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737')
         );
     }
     return $colors[$type][$idx % count($colors[$type])];
@@ -213,7 +273,7 @@ function getCommandForRRD($rrdname, $rrdfolder, $type, $subtype, $opts, $stack, 
     global $path_rrd;
 
     $buildname = "{$path_rrd}{$rrdfolder}/{$rrdname}_{$type}.rrd";
-
+    #error_log("in the getCommandForRRD func, and the buld name is: " . $buildname);
     if (isset($opts['graphing_method']) && $opts['graphing_method'] != '') {
         $gm = $opts['graphing_method'];
     } else {
@@ -269,6 +329,79 @@ function getCommandForRRD($rrdname, $rrdfolder, $type, $subtype, $opts, $stack, 
     $rrdcmd .= "GPRINT:{$data_key}:MAX:\"Max\:%8.2lf %s\\n\" ";
     
     return $rrdcmd;
+}
+
+
+function getaltCommandForRRD($rrdname, $rrdfolder, $type, $subtype, $opts, $stack, $idx = 0) {
+    global $path_rrd;
+
+    $buildname = "{$path_rrd}{$rrdfolder}/{$rrdname}.rrd";
+    #$buildname = "{$path_rrd}{$rrdfolder}/{$rrdname}";
+    #error_log("in the getaltCommandForRRD line 336 func, and the buld name is: " . $buildname);
+    if (isset($opts['graphing_method']) && $opts['graphing_method'] != '') {
+        $gm = $opts['graphing_method'];
+    } else {
+        if (!$stack && ($idx > 0 || $type == 'errors')) {
+            $gm = 'LINE1';
+        } else {
+            $gm = 'AREA';
+        }
+    }
+
+    if (isset($opts['color']) && $opts['color'] != '') {
+        $color = $opts['color'];
+    } else {
+        $color = getDefaultColor($type, $idx, $stack);
+    }
+
+    $data_column_label = getDataColumnAndLabel($subtype);
+    $data_column = $data_column_label['data_column'];
+    #error_log("datacolumnlabel is " . var_dump($data_column_label) . "and datacolumn is " . $data_column );
+    if (isset($opts['custom_label']) && $opts['custom_label'] != '') {
+	#error_log("made it to the if isset opts, we are looking for the custom label:" . $opts['custom_label'] );
+        $data_label = $opts['custom_label'];
+    } else {
+        // if the graphs are stacked, then they'd all have the same label. lets just use the rrd name by default.
+        if ($stack) {
+            $data_label = $rrdname;
+        } else {
+            $data_label = $data_column_label['data_label'];
+    #error_log("data_label is " . $data_label . "and datacolumn is " . $data_column );
+        }
+    }
+    $data_label = str_replace('"', '\"', $data_label);
+
+    $def = "a{$idx}"; //avoid collisions by using idx to name data
+    $rrdcmd = "DEF:{$def}='{$buildname}':{$data_column}:AVERAGE ";
+    $data_key = $def;
+    if ($type == "bits") {
+        $cdef = "${def},8,*"; // bits/sec
+        $rrdcmd .= "CDEF:cdef{$def}={$cdef} ";
+        $data_key = "cdef{$def}";
+    }
+    
+    if ($stack) { 
+        $stk = ":STACK";
+    } else {
+        $stk = "";
+    }
+
+    $rrdcmd .= "{$gm}:{$data_key}{$color}:\"{$data_label}\"{$stk} ";
+    #error_log("made it to just after first rrdcmd" . $rrdcmd);
+
+    $rrdcmd .= "GPRINT:{$data_key}:LAST:\"Curr\:%8.2lf %s\" ";
+    #error_log("made it to just after second rrdcmd" . $rrdcmd);
+    $rrdcmd .= "GPRINT:{$data_key}:AVERAGE:\"Ave\:%8.2lf %s\" ";
+    #error_log("made it to just after third rrdcmd" . $rrdcmd);
+    #if ($type == 'bits')  { 
+        $rrdcmd .= "GPRINT:{$data_key}:MIN:\"Min\:%8.2lf %s\" ";
+    #error_log("made it to just after fourth rrdcmd" . $rrdcmd);
+    #}
+    $rrdcmd .= "GPRINT:{$data_key}:MAX:\"Max\:%8.2lf %s\\n\" ";
+    #error_log("made it to just after fifth rrdcmd" . $rrdcmd);
+    
+    return $rrdcmd;
+    #error_log(" the full rrdcmd is now :" . $rrdcmd);
 }
 
 function getAggregateGraphsArrayFromRequest($request_data) {
@@ -484,6 +617,17 @@ function getAllGraphTypesInUse() {
     return $graphsarray;
 }
 
+function getAllaltGraphTypesInUse() {
+    global $pollhosts;
+
+    $altgraphsarray = array();
+    foreach($pollhosts as $thishost) {
+        $altgraphsarray = array_merge($thishost['altgraphtypes'], $altgraphsarray);
+    }
+    $altgraphsarray = array_unique($altgraphsarray);
+    return $altgraphsarray;
+} 
+
 function logline($message, $messverbose, $reqverbose) {
     # Prints a log message if the message verbosity is in the requested range
     if ($reqverbose >= $messverbose) {
@@ -545,6 +689,9 @@ function htmlHostsInConfig() {
             foreach ($thishost['graphtypes'] as $thistype) {
                 echo '<li><a href="viewhost.php?host=' . $thishost['prettyname'] . '&type=' . $thistype . '">' . $thistype . '</a></li>';
             }
+            foreach ($thishost['altgraphtypes'] as $thisalttype) {
+                echo '<li><a href="viewhostalt.php?host=' . $thishost['prettyname'] . '&type=' . $thisalttype . '">' . $thisalttype . '</a></li>';
+            }     
             echo '</ul>';
             echo '</li>';
         }
@@ -610,11 +757,16 @@ function snmptable($host, $community, $oid) {
     snmp_set_valueretrieval(SNMP_VALUE_PLAIN );
     snmp_set_oid_output_format(SNMP_OID_OUTPUT_NUMERIC);
 
+    #echo "starting snmptable look up for host $host, comm $community, OID $oid \n";
     $retval = array();
     if(!$raw = snmp2_real_walk($host, $community, $oid)) {
         return false;
+	echo "raw data collect failed";
     }
-    if (count($raw) == 0) return false; // no data
+    if (count($raw) == 0) {
+	return false; // no data
+	echo "collect succeeded, but has no data";
+    }
 
     $prefix_length = 0;
     $largest = 0;
@@ -637,8 +789,10 @@ function snmptable($host, $community, $oid) {
         $retval[$index[1]][$index[0]] = $value;
     }
 
-    if (count($retval) == 0) return false; // no data
-
+    if (count($retval) == 0) {
+	return false; // no data
+	echo "retval has 0 values";
+    }
     // fill in holes and blanks the agent may "give" you
     foreach($retval as $k => $x) {
         for ($i = 1; $i <= $largest; $i++) {

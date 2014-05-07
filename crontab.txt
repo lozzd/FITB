@@ -1,0 +1,2 @@
+# the needed crontab
+* * * * * /usr/bin/php /var/www/fitb/poller.php >> /var/log/fitb/poller.log 2>&1

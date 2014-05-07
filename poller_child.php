@@ -25,26 +25,63 @@ $pollprettyhost = $pollhosts[$pollhost]["prettyname"];
 $pollip = $pollhosts[$pollhost]["ip"];
 $pollsnmpcomm = $pollhosts[$pollhost]["snmpcommunity"];
 $pollgraphs = $pollhosts[$pollhost]["graphtypes"];
+# alt graphs are non interface graphs
+$pollaltgraphs = $pollhosts[$pollhost]["altgraphtypes"];
+# platform is the definition of what kind of hardware it is, ie: c3560e or c3064nex
+$pollplatform = $pollhosts[$pollhost]["platform"];
+logline( " the platform for this switch is $pollplatform. ", 1, $verbose);
 
 logline("{$pollprettyhost} - Starting poller run for this host. ", 0, $verbose);
 
 $timestamp = time();
 logline("{$pollprettyhost} - Beginning SNMP poll", 1, $verbose);
-$ifEntry = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.2.1.2.2.1");
-$ifXEntry = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.2.1.31.1.1.1");
+$ifEntry    = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.2.1.2.2.1");
+$ifXEntry   = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.2.1.31.1.1.1");
+# this looks like a good place to start an if or case loop to determine the platform and use compatible oid's
+# BUT it would be better if oid, graph defs, colors, types, etc were all taken care of modularly to make adding new things like intake temp a breeze
+# Also, this seems like a good place to inject common platform elements from the config.php to make the config simpler?
+if( $pollplatform == 'c3560e' || $pollplatform == 'c3560x' ) {
+	#$temp       = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
+	$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
+	#$cpu1minrev = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7");
+	$cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1");
+	#$memfree    = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
+	$memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
+} elseif($pollplatform == 'nexus5000') {
+        # temp oid not supported on a 5k
+	#$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
+        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1");
+        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");  
+} elseif($pollplatform == 'c4000') {
+	#air outlet temp
+        $temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.6");
+        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.57.0");
+        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
+}
+
+
+# print arrays to get debug info
+#logline("$ifEntry" , 1, $verbose);
+#print_r($ifXEntry);
+logline("snmp2_get returned temp as temperature {$temp}" ,1 ,$verbose);
+logline("snmp2_get returned temp as cpu {$cpu1minrev}" ,1 ,$verbose);
+logline("snmp2_get returned temp as memfree {$memfree}" ,1 ,$verbose);
+
+
 logline("{$pollprettyhost} - SNMP poll complete", 1, $verbose);
 
 # Here comes the fun. For every interface, we need to create every graph type that we decided we would graph in the config
-
 if (!$ifEntry) {
     logline("{$pollprettyhost} - SNMP Failed! Either no results, no response or timeout. ", 0, $verbose);
     exit();
 }
 
 foreach($ifEntry as $intid => $thisint) {
-    logline("{$pollprettyhost} - Starting interface loop for interface index {$intid} ({$thisint[2]})", 1, $verbose);
+    logline("{$pollprettyhost} - Starting interface loop for interface index {$intid} int name ({$thisint[2]})", 1, $verbose);
 
+    #logline("is up/down $thisint[7] , $thisint[8].");
     # Check if the interface is up. No point graphing down interfaces. 
+    ##  this IF is FAILING
     if (($thisint[7] == "1") && ($thisint['8'] == "1")) {
 
         # Assign the values to an array with names for easier referencing
@@ -61,7 +98,7 @@ foreach($ifEntry as $intid => $thisint) {
         $thisint['inbroadcast'] = $ifXEntry[$intid][9];
         $thisint['outbroadcast'] = $ifXEntry[$intid][13];
         $thisint['alias'] = $ifXEntry[$intid][18]; 
-    
+
         # Sanitise the name
         $intname = str_replace("/", "-", $thisint[2]); 
         $intname = str_replace(" ", "-", $intname); 
@@ -71,16 +108,13 @@ foreach($ifEntry as $intid => $thisint) {
 
         # Sanitise the alias
         $thisint['alias'] = str_replace('"', "", $thisint['alias']);
-       
         
         logline("{$pollprettyhost} - {$intname} - Description for {$intname} is {$thisint['alias']}.", 2, $verbose);
         
         # This loop is going to run a lot. For every interface, create every graph. 
         foreach($pollgraphs as $thisgraph) {
-
             logline("{$pollprettyhost} - {$intname} - Starting loop for interface {$intname} and graph type {$thisgraph}", 2, $verbose);
             $thisgraphdef = getGraphDefinition($thisgraph);
-
             $genrrdname = "{$pollprettyhost}-{$intname}_{$thisgraphdef['filesuffix']}.rrd"; 
 
             logline("{$pollprettyhost} - {$intname} - Starting find or create RRD for graphtype {$thisgraph} and interface {$thisint['name']}... ", 2, $verbose);
@@ -124,6 +158,66 @@ foreach($ifEntry as $intid => $thisint) {
     logline("{$pollprettyhost} - {$intname} - Loop for interface {$thisint['name']} complete", 1, $verbose);
 }
 
+##################################################################################################################################
+
+# This loop is going to run for each altgraph defined per host
+if (!$pollaltgraphs) {
+	logline("Alternate graphs not configured for host {$prettypollhost}.", 1, $verbose);
+	exit();
+} else {
+	#logline(" pollaltgraphs is {$pollaltgraphs[0]} , second one is {$pollaltgraphs[1]} , third one is {$pollaltgraphs[2]} ", 1, $verbose);
+	foreach($pollaltgraphs as $thisgraph) {
+
+            logline("{$pollprettyhost} - Starting loop for graph type {$thisgraph}", 2, $verbose);
+            $thisgraphdef = getGraphDefinition($thisgraph);
+	    #error_log("poller_child: thisgraphdef is {$thisgraphdef['rrddef']} and data is {$thisgraphdef['datasources']} and file is {$thisgraphdef['filesuffix']}", 1, $verbose);
+            $genrrdname = "{$pollprettyhost}-{$thisgraphdef['filesuffix']}.rrd";
+  #logline("poller_child: the genrrdname is $genrrdname", 1 ,$verbose);
+
+            logline("{$pollprettyhost} - Starting find or create RRD for graphtype {$thisgraph} ... ", 2, $verbose);
+            if (!findOrCreateRRD($genrrdname, $pollprettyhost, $thisgraphdef['rrddef'])) {
+                logline("{$pollprettyhost} - {$intname} - findOrCreateRRD returned false! Could not find or create the RRD file, check your permissions", 0, $verbose);
+                return false;
+		echo "failed to find or create rrd file($genrrdname, $pollprettyhost, {$thisgraphdef['rrddef']})";
+		logline("{$pollprettyhost} - {$intname} - FAILED to find or create rrd file for {$genrrdname} - {$pollprettyhost} - {$thisgraphdef['rrddef']}", 1, $verbose);
+            }
+            logline("{$pollprettyhost} - Find or create rrd done", 2, $verbose);
+
+	    # alt graphs are all single value so far and have nothing to do with interfaces, so leaving this here for the future?
+            $insertvalues = "";
+	    logline("the datasources is {$thisgraphdef['datasources']} " ,1 ,$verbose);
+	    if($thisgraphdef['datasources'] == 'temp') {
+                   #$insertvalues = ${$thisgraphdef['datasources']};
+                $insertvalues .= $temp;
+                logline("{$pollprettyhost} - {$thisgraph} - Going to update RRD {$genrrdname} with data {$insertvalues} which should equal $temp", 1, $verbose);
+                updateRRD($genrrdname, $pollprettyhost, $timestamp, $insertvalues);
+                logline("{$pollprettyhost} - {$thisgraph} - Update RRD done", 1, $verbose);
+	    } elseif($thisgraphdef['datasources'] == 'cpu1minrev') {
+                $insertvalues .= $cpu1minrev;
+		logline("{$pollprettyhost} - {$thisgraph} - Going to update RRD {$genrrdname} with data {$insertvalues} which should equal $cpu1minrev", 1, $verbose);
+                updateRRD($genrrdname, $pollprettyhost, $timestamp, $insertvalues);
+                logline("{$pollprettyhost} - {$thisgraph} - Update RRD done", 1, $verbose);
+            } elseif($thisgraphdef['datasources'] == 'memfree') {
+                $insertvalues .= $memfree;
+                logline("{$pollprettyhost} - {$thisgraph} - Going to update RRD {$genrrdname} with data {$insertvalues} which should equal $memfree", 1, $verbose);
+                updateRRD($genrrdname, $pollprettyhost, $timestamp, $insertvalues);
+                logline("{$pollprettyhost} - {$thisgraph} - Update RRD done", 1, $verbose);
+            }            
+
+ 
+            logline("{$pollprettyhost} - {$thisgraph} - Updating database", 2, $verbose);
+            # Insert the details of this metric into the database for future reference
+            connectToDB();
+            # first, delete the previous row if it exists, WHY ARE WE DELETING THIS?
+            mysql_query('DELETE FROM altgraphs where host="' . $pollprettyhost . '" AND safename="' . $thisgraph['name']. '" AND graphtype="' . $thisgraph . '"');
+            # Now insert the values
+            mysql_query('INSERT INTO altgraphs (host, name, safename, filename, alias, graphtype, lastpoll)
+                VALUES ("'.$pollprettyhost.'", "'.$thisgraph.'", "'.$thisgraph['name'].'", "'.$genrrdname.'", "'.$thisgraph.'", "'.$thisgraph.'", "'. $timestamp .'")');
+
+            logline("{$pollprettyhost} - {$thisgraph} - Done Updating database", 2, $verbose);
+            logline("{$pollprettyhost} - {$intgraph} - Done loop for {$thisgraph} ", 2, $verbose);
+        }
+}
 logline("{$pollprettyhost} - Poller has completed it's run for this host. ", 0, $verbose);
 
 
