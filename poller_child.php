@@ -37,21 +37,23 @@ $timestamp = time();
 logline("{$pollprettyhost} - Beginning SNMP poll", 1, $verbose);
 $ifEntry    = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.2.1.2.2.1");
 $ifXEntry   = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.2.1.31.1.1.1");
-# this looks like a good place to start an if or case loop to determine the platform and use compatible oid's
-# BUT it would be better if oid, graph defs, colors, types, etc were all taken care of modularly to make adding new things like intake temp a breeze
+
+# It would be better if oid, graph defs, colors, types, etc were all taken care of modularly to make adding new things like intake temp a breeze
 # Also, this seems like a good place to inject common platform elements from the config.php to make the config simpler?
 if( $pollplatform == 'c3560e' || $pollplatform == 'c3560x' ) {
-	#$temp       = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
 	$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
-	#$cpu1minrev = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7");
 	$cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1");
-	#$memfree    = snmptable($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
 	$memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
 } elseif($pollplatform == 'nexus5000') {
-        # temp oid not supported on a 5k,  also set timeout to 5 sec as its slow to return
-	#$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.1006");
-        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1", 5000000);
-        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.13.1", 5000000);  
+	$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.91.1.1.1.1.4.21598");
+        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1");
+        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");  
+} elseif($pollplatform == 'nexus7000') {
+        # the 7k has a million temp sensors, this one is the cpu on CMP in slot5
+	# Note: these work on the base vdc
+	$temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.91.1.1.1.1.4.21850");
+        $cpu1minrev = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.7.1");
+        $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.109.1.1.1.1.13.1");  
 } elseif($pollplatform == 'c4000') {
 	#air outlet temp
         $temp       = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.9.13.1.3.1.3.6");
@@ -59,14 +61,12 @@ if( $pollplatform == 'c3560e' || $pollplatform == 'c3560x' ) {
         $memfree    = snmp2_get($pollip, $pollsnmpcomm, "1.3.6.1.4.1.9.2.1.8.0");
 }
 
-
 # print arrays to get debug info
-#logline("$ifEntry" , 1, $verbose);
-#print_r($ifXEntry);
-logline("snmp2_get returned temp as temperature {$temp}" ,1 ,$verbose);
-logline("snmp2_get returned cpu as cpu {$cpu1minrev}" ,1 ,$verbose);
-logline("snmp2_get returned memfree as memfree {$memfree}" ,1 ,$verbose);
-
+logline("$ifEntry" , 2, $verbose);
+logline("$ifXEntry", 2, $verbose);
+logline("snmp2_get returned temp as temperature {$temp}" ,2 ,$verbose);
+logline("snmp2_get returned cpu as cpu {$cpu1minrev}" ,2,$verbose);
+logline("snmp2_get returned memfree as memfree {$memfree}" ,2 ,$verbose);
 
 logline("{$pollprettyhost} - SNMP poll complete", 1, $verbose);
 
