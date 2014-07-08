@@ -56,3 +56,10 @@ $default_duration = "-86400";
 # PHP Error reporting
 # Incase you want to debug my crappy code, change this
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
+
+# Uncomment if you are using PHP version 5.3.0 or newer. PHP 5.3.0+ require timezone to be set or it
+# will produce a line of warning output for every port the poller calls date functions. Adjust to match
+# your system time configuration, such as 'America/Los_Angeles', etc)
+# date_default_timezone_set('UTC');
+
+# This file ends WITHOUT the normal php closing tag.  Do not change.
