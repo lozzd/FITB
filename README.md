@@ -106,3 +106,5 @@ Aggregate graphs can be created by shift-clicking desired component graphs. When
 * Your hosts must support SNMPv2, SNMPv1 did not have the information/resolution I required so it was written with v2
 in mind. most switches support this though. 
 * Keep this inside your network. I can't be held responsible for massive security holes. 
+* PHP versions 5.3.0 and higher require that the time zone be explicitly set for date functions. You can either set
+your system date globally in php.ini, or you can set it in the config.php using a date_default_timezone_set() call.
