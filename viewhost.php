@@ -32,7 +32,7 @@ $title_info = 'View ' . ($viewport ? 'port' : 'host') . ' - '.$viewhost.($viewpo
             # Lets find some graphs! Connect to the database, select all the ports for this host, and this graphtype (Empty wildcard makes sure all graphs appear if none set)
             if (connectToDB()) {
                 $port_clause = $viewport ? ' AND safename="' . mysql_real_escape_string($viewport) . '" ' : '';
-                $result = mysql_query('SELECT * FROM ports WHERE host like "%' . mysql_real_escape_string($viewhost). '%" AND graphtype like "%' . mysql_real_escape_string($viewtype) . '%" '. $port_clause .' ORDER BY lastpoll DESC, safename ASC');
+                $result = mysql_query('SELECT * FROM ports WHERE host = "' . mysql_real_escape_string($viewhost). '" AND graphtype like "%' . mysql_real_escape_string($viewtype) . '%" '. $port_clause .' ORDER BY lastpoll DESC, safename ASC');
 
                 if(mysql_num_rows($result) > 0) {
                     echo '<ul id="host-graphs">';
