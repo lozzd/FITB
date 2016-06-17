@@ -24,6 +24,12 @@ $path_rrdtool = "/usr/bin/rrdtool";
 # The path where you want to store your RRD files. The default is the "rrds" directory beneath this file.
 $path_rrd = dirname(__FILE__) . "/rrds/";
 
+# Also send gathered data to statsd.
+# 0 for disable, 1 for enable.
+$statsd_enable = 0;
+# Specify statsd destination.
+$statsd_host = "statsd.example.org";
+$statsd_port = 1234;
 
 # Feel free to adjust these RRA definitions. Default stores 1 month at 1 minute resolution, and 1 year at 60 minutes
 $RRA_average = "RRA:AVERAGE:0.5:1:44640 RRA:AVERAGE:0.5:60:8760 ";
