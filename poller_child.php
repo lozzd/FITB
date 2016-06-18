@@ -72,9 +72,15 @@ foreach($ifEntry as $intid => $thisint) {
         # Sanitise the alias
         $thisint['alias'] = str_replace('"', "", $thisint['alias']);
        
-        
         logline("{$pollprettyhost} - {$intname} - Description for {$intname} is {$thisint['alias']}.", 2, $verbose);
-        
+
+        # Send data to statsd.
+        if (isset($statsd_host, $statsd_port, $statsd_prefix, $statsd_metrics)) {
+            foreach($statsd_metrics as $metric) {
+                exec("nohup echo '{$statsd_prefix}.{$pollprettyhost}.{$thisint['name']}.{$metric} {$thisint[$metric]} {$timestamp}' | nc -u {$statsd_host} {$statsd_port} &");
+            }
+        }
+                
         # This loop is going to run a lot. For every interface, create every graph. 
         foreach($pollgraphs as $thisgraph) {
 
