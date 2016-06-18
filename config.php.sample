@@ -32,6 +32,7 @@ $RRA_max     = "RRA:MAX:0.5:1:44640 RRA:MAX:0.5:60:8760";
 # $statsd_host = "statsd.example.org";
 # $statsd_port = 1234;
 # $statsd_prefix = "network";
+# $statsd_metrics = array("inerrors","outdiscards");
 
 # Database connection parameters
 $mysql_host = "localhost";
