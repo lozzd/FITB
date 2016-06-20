@@ -26,6 +26,14 @@ $pollip = $pollhosts[$pollhost]["ip"];
 $pollsnmpcomm = $pollhosts[$pollhost]["snmpcommunity"];
 $pollgraphs = $pollhosts[$pollhost]["graphtypes"];
 
+# Connect carbon.
+if (isset($carbon_host,$carbon_port,$graphite_prefix,$graphite_metrics)) {
+    $carbon = fsockopen($carbon_host, $carbon_port, $errno, $errstr, 5);
+    if (!$carbon) {
+        logline("{$pollprettyhost} - Connect to carbon failed.", 0, $verbose);
+    }
+}
+
 logline("{$pollprettyhost} - Starting poller run for this host. ", 0, $verbose);
 
 $timestamp = time();
@@ -74,7 +82,14 @@ foreach($ifEntry as $intid => $thisint) {
        
         
         logline("{$pollprettyhost} - {$intname} - Description for {$intname} is {$thisint['alias']}.", 2, $verbose);
-        
+ 
+        # Send data to carbon.
+        if ($carbon) {
+            foreach($graphite_metrics as $metric) {
+                fwrite($carbon, "{$graphite_prefix}.{$pollprettyhost}.{$thisint['name']}.{$metric} {$thisint[$metric]} {$timestamp}\n");
+            }
+        }
+       
         # This loop is going to run a lot. For every interface, create every graph. 
         foreach($pollgraphs as $thisgraph) {
 
@@ -126,4 +141,7 @@ foreach($ifEntry as $intid => $thisint) {
 
 logline("{$pollprettyhost} - Poller has completed it's run for this host. ", 0, $verbose);
 
-
+# Disconnect carbon.
+if ($carbon) {
+    fclose($carbon);
+}
