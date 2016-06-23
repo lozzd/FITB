@@ -29,6 +29,11 @@ $path_rrd = dirname(__FILE__) . "/rrds/";
 $RRA_average = "RRA:AVERAGE:0.5:1:44640 RRA:AVERAGE:0.5:60:8760 ";
 $RRA_max     = "RRA:MAX:0.5:1:44640 RRA:MAX:0.5:60:8760";
 
+# Also send data to graphite.
+# $carbon_host = "graphite.example.org";
+# $carbon_port = 2009;
+# $graphite_prefix = "network";
+# $graphite_metrics = array("inerrors","outdiscards");
 
 # Database connection parameters
 $mysql_host = "localhost";
