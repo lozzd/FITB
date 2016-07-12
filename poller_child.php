@@ -27,7 +27,7 @@ $pollsnmpcomm = $pollhosts[$pollhost]["snmpcommunity"];
 $pollgraphs = $pollhosts[$pollhost]["graphtypes"];
 
 # Connect carbon.
-if (isset($carbon_host,$carbon_port,$graphite_prefix,$graphite_metrics)) {
+if (isset($carbon_host,$carbon_port,$graphite_prefix,$graphite_metrics,$graphite_datacenter)) {
     $carbon = fsockopen($carbon_host, $carbon_port, $errno, $errstr, 5);
     if (!$carbon) {
         logline("{$pollprettyhost} - Connect to carbon failed.", 0, $verbose);
@@ -86,7 +86,7 @@ foreach($ifEntry as $intid => $thisint) {
         # Send data to carbon.
         if ($carbon) {
             foreach($graphite_metrics as $metric) {
-                fwrite($carbon, "{$graphite_prefix}.{$pollprettyhost}.{$thisint['name']}.{$metric} {$thisint[$metric]} {$timestamp}\n");
+                fwrite($carbon, "{$graphite_prefix}.{$graphite_datacenter}-{$pollprettyhost}.{$thisint['name']}.{$metric} {$thisint[$metric]} {$timestamp}\n");
             }
         }
        

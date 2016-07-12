@@ -34,6 +34,7 @@ $RRA_max     = "RRA:MAX:0.5:1:44640 RRA:MAX:0.5:60:8760";
 # $carbon_port = 2009;
 # $graphite_prefix = "network";
 # $graphite_metrics = array("inerrors","outdiscards");
+# $graphite_datacenter = "dc1";
 
 # Database connection parameters
 $mysql_host = "localhost";
