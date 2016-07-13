@@ -4,7 +4,7 @@ include_once('functions.php');
 
 # Set some defaults if they are not specified. 
 if (isset($_GET['debug']) && is_numeric($_GET['debug'])) {
-  $debug =  $_GET['debug'];
+  $debug = $_GET['debug'];
 } else {
   $debug = 0;
 }
@@ -65,6 +65,7 @@ if (isset($_GET['aggregate_id'])) {
         $rrdname = $_GET['rrdname'];
         $rrdfolder = $_GET['host'];
         $rrdtoolcmd = getGraphCmd($rrdname, $rrdfolder, $type, $start, $end, $height, $width, $friendlytitle);
+	#error_log("graph.php line 68: rrdtoolcmd is " . $rrdtoolcmd);
     }
 }
 
@@ -80,7 +81,7 @@ header ("Content-type: image/png");
 
 if ($debug >= 2) {
   header ("Content-type: text/html");
-  echo $rrdtoolcmd;
+  #echo $rrdtoolcmd;
 }
 else {
   if ($debug >= 1) {

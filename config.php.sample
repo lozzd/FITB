@@ -9,6 +9,9 @@ $pollingenabled = true;
 # 
 $pollhosts = array(
     "yourswitchname" => array("prettyname" => "yourswitchname", "enabled" => true, "showoninterface" => true, "ip" => "yourswitchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors')),
+    # optionally add alt graphs for cpu , memfree or temp if available
+    "yourswitchname" => array("prettyname" => "yourswitchname", "enabled" => true, "showoninterface" => true, "ip" => "yourswitchname.yourcompany.com", "snmpcommunity" => "public", "graphtypes" => array('bits','ucastpkts','errors'), "altgraphtypes" => array('cpu1minrev', 'memf
+ree')),
     # more hosts go here
 );
 

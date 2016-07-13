@@ -376,7 +376,10 @@ GraphManager.GraphEditForm.prototype = {
             'ucastpkts': ['#2008E6', '#D401E2', '#00DFD6', '#08004E'],
             'errors': ['#30B6C9', '#FFFE39', '#AD34CF', '#09616D'],
             'mcastpkts': ['#53B0B8', '#7E65C7', '#C2F2C6', '#FFB472'],
-            'bcastpkts': ['#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737']
+            'bcastpkts': ['#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'],
+            'temp': ['#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'],
+            'cpu1minrev': ['#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737'],
+            'memfree': ['#FFEF9F', '#C17AC3', '#7FA1C3', '#AA9737']    
         }[this.type];
         return colors[this.idx % colors.length];
     },
