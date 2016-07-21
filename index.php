@@ -19,11 +19,11 @@ include_once('functions.php');
         <p>FITB is a automatic, RRDTool based graphing product that leaves no port untouched.</p>
         <p>Select a host from the left.</p>
 <?php 
-        if (!function_exists("mysql_connect")) {
+        if (!function_exists("mysqli_connect")) {
             echo '<p><span class="red">It looks like you don\'t have PHP MySQL libraries installed. FITB will require these to connect to the
                 database</span></p>';
         } 
-        if (!connectToDB()) {
+        if (!$link=connectToDB()) {
             echo '<p><span class="red">FITB is having trouble connecting to your database. Have you set up MySQL with the FITB database and specified 
                 the correct connection parameters in config.php?</span></p>';
         }

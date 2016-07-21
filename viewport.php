@@ -26,12 +26,12 @@ if(isset($_GET['duration'])) {
     <div id="main">
         <h2>View port - <?php echo "$viewhost - $viewport" ?></h2>
             <?php
-            connectToDB();
-            $result = mysql_query('SELECT * FROM ports WHERE host="' . mysql_real_escape_string($viewhost). '" AND safename="' . mysql_real_escape_string($viewport) . '" ORDER BY lastpoll DESC, safename ASC');
+            $link = connectToDB();
+            $result = mysqli_query($link, 'SELECT * FROM ports WHERE host="' . mysqli_real_escape_string($viewhost). '" AND safename="' . mysqli_real_escape_string($viewport) . '" ORDER BY lastpoll DESC, safename ASC');
 
-            if(mysql_num_rows($result) > 0) {
+            if(mysqli_num_rows($result) > 0) {
 
-               while ($row = mysql_fetch_assoc($result)) {
+               while ($row = mysqli_fetch_assoc($result)) {
                     $staletag = "";
                     if ((time() - $row['lastpoll']) > $staleage) {
                         $staletag = "STALE: ";

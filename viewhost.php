@@ -30,13 +30,13 @@ $title_info = 'View ' . ($viewport ? 'port' : 'host') . ' - '.$viewhost.($viewpo
         <h2><?php echo $title_info;  ?></h2>
             <?php
             # Lets find some graphs! Connect to the database, select all the ports for this host, and this graphtype (Empty wildcard makes sure all graphs appear if none set)
-            if (connectToDB()) {
-                $port_clause = $viewport ? ' AND safename="' . mysql_real_escape_string($viewport) . '" ' : '';
-                $result = mysql_query('SELECT * FROM ports WHERE host = "' . mysql_real_escape_string($viewhost). '" AND graphtype like "%' . mysql_real_escape_string($viewtype) . '%" '. $port_clause .' ORDER BY lastpoll DESC, safename ASC');
+            if ($link=connectToDB()) {
+                $port_clause = $viewport ? ' AND safename="' . mysqli_real_escape_string($link, $viewport) . '" ' : '';
+                $result = mysqli_query($link, 'SELECT * FROM ports WHERE host = "' . mysqli_real_escape_string($link, $viewhost). '" AND graphtype like "%' . mysqli_real_escape_string($link, $viewtype) . '%" '. $port_clause .' ORDER BY lastpoll DESC, safename ASC');
 
-                if(mysql_num_rows($result) > 0) {
+                if(mysqli_num_rows($result) > 0) {
                     echo '<ul id="host-graphs">';
-                    while ($row = mysql_fetch_assoc($result)) {
+                    while ($row = mysqli_fetch_assoc($result)) {
                         $staletag = "";
                         if ((time() - $row['lastpoll']) > $staleage) {
                             $staletag = "STALE: ";

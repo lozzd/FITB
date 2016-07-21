@@ -32,11 +32,11 @@ if(isset($_GET['duration'])) {
     <div id="main">
         <h2>View graph - <?php echo "$viewhost - $viewport - $viewtype" ?></h2>
             <?php
-            connectToDB();
-            $result = mysql_query('SELECT * FROM ports WHERE host="' . mysql_real_escape_string($viewhost). '" AND graphtype="' . mysql_real_escape_string($viewtype) . '" AND safename="' . mysql_real_escape_string($viewport) . '" ');
+            $link=connectToDB();
+            $result = mysqli_query($link, 'SELECT * FROM ports WHERE host="' . mysqli_real_escape_string($viewhost). '" AND graphtype="' . mysqli_real_escape_string($viewtype) . '" AND safename="' . mysqli_real_escape_string($viewport) . '" ');
 
-            if(mysql_num_rows($result) > 0) {
-                $row = mysql_fetch_assoc($result);
+            if(mysqli_num_rows($result) > 0) {
+                $row = mysqli_fetch_assoc($result);
                 echo "<div>";
                 echo "<p>Port Name: <a href=\"viewhost.php?host={$row['host']}&port={$row['safename']}\">{$row['name']}</a> </p>";
                 echo "<p>Port Alias: <pre>{$row['alias']}</pre></p>";
