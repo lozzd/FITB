@@ -39,26 +39,26 @@ if((isset($_GET['host'])) && ($_GET['host'] != "")) {
             }
         ?>
             <?php
-            connectToDB();
-            $searchquery = mysql_real_escape_string($searchquery);
+            $link=connectToDB();
+            $searchquery = mysqli_real_escape_string($link, $searchquery);
 
             if (isset($host)) {
-                $host = mysql_real_escape_string($host);
-                $type = mysql_real_escape_string($type);
-                $result = mysql_query('SELECT * FROM ports WHERE (name like "%' . $searchquery . '%" OR alias like "%' . $searchquery . '%") 
+                $host = mysqli_real_escape_string($link, $host);
+                $type = mysqli_real_escape_string($link, $type);
+                $result = mysqli_query($link, 'SELECT * FROM ports WHERE (name like "%' . $searchquery . '%" OR alias like "%' . $searchquery . '%") 
                                             AND graphtype like "%' . $type . '%" AND host="' . $host . '" ORDER BY lastpoll DESC, safename ASC');
             } elseif (isset($type)) {
-                $type = mysql_real_escape_string($type);
-                $result = mysql_query('SELECT * FROM ports WHERE (name like "%' . $searchquery . '%" OR alias like "%' . $searchquery . '%") 
+                $type = mysqli_real_escape_string($link, $type);
+                $result = mysqli_query($link, 'SELECT * FROM ports WHERE (name like "%' . $searchquery . '%" OR alias like "%' . $searchquery . '%") 
                                             AND graphtype="' . $type . '" ORDER BY lastpoll DESC, safename ASC');
             } else {
-                $result = mysql_query('SELECT * FROM ports WHERE (name like "%' . $searchquery . '%" OR alias like "%' . $searchquery . '%")
+                $result = mysqli_query($link, 'SELECT * FROM ports WHERE (name like "%' . $searchquery . '%" OR alias like "%' . $searchquery . '%")
                                             ORDER BY lastpoll DESC, safename ASC');
             }
-            if(mysql_num_rows($result) > 0) {
-                $numresults = mysql_num_rows($result);
+            if(mysqli_num_rows($result) > 0) {
+                $numresults = mysqli_num_rows($result);
                 echo "<div class=\"small\">{$numresults} results found</div>";
-                while ($row = mysql_fetch_assoc($result)) {
+                while ($row = mysqli_fetch_assoc($result)) {
                     $staletag = "";
                     if ((time() - $row['lastpoll']) > $staleage) {
                         $staletag = "STALE: ";

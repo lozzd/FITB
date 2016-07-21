@@ -123,11 +123,11 @@ foreach($ifEntry as $intid => $thisint) {
 
             logline("{$pollprettyhost} - {$intname} - Updating database", 2, $verbose);
             # Insert the details of this graph/port into the database for future reference
-            connectToDB();
+            $link=connectToDB();
             # first, delete the previous row if it exists
-            mysql_query('DELETE FROM ports where host="' . $pollprettyhost . '" AND safename="' . $thisint['name']. '" AND graphtype="' . $thisgraph . '"');
+            mysqli_query($link, 'DELETE FROM ports where host="' . $pollprettyhost . '" AND safename="' . $thisint['name']. '" AND graphtype="' . $thisgraph . '"');
             # Now insert the values
-            mysql_query('INSERT INTO ports (host, name, safename, filename, alias, graphtype, lastpoll)
+            mysqlii_query($link, 'INSERT INTO ports (host, name, safename, filename, alias, graphtype, lastpoll)
                 VALUES ("'.$pollprettyhost.'", "'.$thisint[2].'", "'.$thisint['name'].'", "'.$genrrdname.'", "'.$thisint['alias'].'", "'.$thisgraph.'", "'. $timestamp .'")');
 
             logline("{$pollprettyhost} - {$intname} - Done Updating database", 2, $verbose);

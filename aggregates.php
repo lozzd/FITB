@@ -23,12 +23,12 @@ if(isset($_GET['duration'])) {
     <div id="main">
         <h2>View Aggregates</h2>
             <?php
-            if (connectToDB()) {
-                $result = mysql_query('SELECT aggregate_id FROM aggregates ORDER BY friendlytitle'); // depending on the number of aggregates we have, we may want to have some filtering
+            if ($link=connectToDB()) {
+                $result = mysqli_query($link, 'SELECT aggregate_id FROM aggregates ORDER BY friendlytitle'); // depending on the number of aggregates we have, we may want to have some filtering
 
-                if (mysql_num_rows($result) > 0) {
+                if (mysqli_num_rows($result) > 0) {
                     echo '<ul id="aggregate-graphs">';
-                    while ($row = mysql_fetch_assoc($result)) {
+                    while ($row = mysqli_fetch_assoc($result)) {
                         $aggregate_id = $row['aggregate_id'];
                         
                         $url = "graph.php?aggregate_id={$aggregate_id}&height=100&width=400";

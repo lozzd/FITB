@@ -336,94 +336,94 @@ function getAggregateGraphsArrayFromRequest($request_data) {
 }
 
 function saveAggregate($graphs_array, $meta) {
-    if (!connectToDB() || count($graphs_array) < 1) {
+    if (!$link=connectToDB() || count($graphs_array) < 1) {
         return false;
     }
-    $res = mysql_query('START TRANSACTION');
+    $res = mysqli_query($link, 'START TRANSACTION');
 
     $friendlytitle = $meta['friendlytitle'] ? $meta['friendlytitle'] : null;
     $type = $meta['type'];
     $stack = $meta['stack'] !== false ? '1' : '0';
     $fields = array(
-        $friendlytitle ? "'" . mysql_escape_string($friendlytitle) . "'" : 'NULL',
-        "'" . mysql_escape_string($type) . "'",
-        "'" . mysql_escape_string($stack) . "'"
+        $friendlytitle ? "'" . mysqli_real_escape_string($link, $friendlytitle) . "'" : 'NULL',
+        "'" . mysqli_real_escape_string($link, $type) . "'",
+        "'" . mysqli_real_escape_string($link, $stack) . "'"
     );
     $query = "INSERT INTO aggregates (friendlytitle, type, stack) VALUES (" . implode(',', $fields) . ")";
                 
-    $inserted = mysql_query($query);
+    $inserted = mysqli_query($link, $query);
 
     if ($inserted) {
-        $agg_id = mysql_insert_id();
+        $agg_id = mysqli_insert_id();
 
         $inserts = array();
         foreach ($graphs_array as $g) {
             $options = 'NULL';
             if ($g['opts'] != null) {
-                $options = mysql_real_escape_string(json_encode($g['opts']));
+                $options = mysqli_real_escape_string($link, json_encode($g['opts']));
             }
 
             $fields = array(
                 $agg_id,
-                "'" . mysql_real_escape_string($g['rrdfolder']) . "'",
-                "'" . mysql_real_escape_string($g['rrdname']) . "'",
-                $g['subtype'] ? "'" . mysql_real_escape_string($g['subtype']) . "'" : 'NULL',
-                $g['opts'] ? "'" . mysql_real_escape_string(json_encode($g['opts'])) . "'" : 'NULL'
+                "'" . mysqli_real_escape_string($link, $g['rrdfolder']) . "'",
+                "'" . mysqli_real_escape_string($link, $g['rrdname']) . "'",
+                $g['subtype'] ? "'" . mysqli_real_escape_string($link, $g['subtype']) . "'" : 'NULL',
+                $g['opts'] ? "'" . mysqli_real_escape_string($link, json_encode($g['opts'])) . "'" : 'NULL'
             );
             $inserts[] = '(' . implode(',', $fields) . ')';
         }
         $query = "INSERT INTO aggregate_parts (aggregate_id, host, rrdname, subtype, options) VALUES " . implode(',', $inserts);
-        $inserted = mysql_query($query);
+        $inserted = mysqli_query($link, $query);
     }
 
     if ($inserted) {
-        $inserted = mysql_query('COMMIT');
+        $inserted = mysqli_query($link, 'COMMIT');
         return $agg_id;
     } else {
-        $res = mysql_query('ROLLBACK');
+        $res = mysqli_query($link, 'ROLLBACK');
     }
     return null;
 }
 
 function deleteAggregate($aggregate_id) {
-    if (!connectToDB()) {
+    if (!$link=connectToDB()) {
         return false;
     }
     
-    $res = mysql_query('START TRANSACTION');
+    $res = mysqli_query($link, 'START TRANSACTION');
     
-    $query = 'DELETE FROM aggregates WHERE aggregate_id = "'.mysql_real_escape_string($aggregate_id).'"';
-    $deleted = mysql_query($query);
+    $query = 'DELETE FROM aggregates WHERE aggregate_id = "'.mysqli_real_escape_string($link, $aggregate_id).'"';
+    $deleted = mysqli_query($link, $query);
     
     if ($deleted) {
-        $query = 'DELETE FROM aggregate_parts WHERE aggregate_id = "'.mysql_real_escape_string($aggregate_id).'"';
-        $deleted = mysql_query($query);
+        $query = 'DELETE FROM aggregate_parts WHERE aggregate_id = "'.mysqli_real_escape_string($link, $aggregate_id).'"';
+        $deleted = mysqli_query($link, $query);
     }
     
     if ($deleted) {
-        $deleted = mysql_query('COMMIT');
+        $deleted = mysqli_query($link, 'COMMIT');
     } else {
-        $res = mysql_query('ROLLBACK');
+        $res = mysqli_query($link, 'ROLLBACK');
     }
     return $deleted;
 }
 
 function getAggregateData($agg_id) {
-    connectToDB();
+    $link=connectToDB();
 
-    $result = mysql_query('SELECT * FROM aggregates WHERE aggregate_id='.mysql_real_escape_string($agg_id));
-    if (mysql_num_rows($result) == 1) {
-        $agg = mysql_fetch_assoc($result);
+    $result = mysqli_query($link, 'SELECT * FROM aggregates WHERE aggregate_id='.mysqli_real_escape_string($link, $agg_id));
+    if (mysqli_num_rows($result) == 1) {
+        $agg = mysqli_fetch_assoc($result);
         $meta = array(
             'friendlytitle' => !is_null($agg['friendlytitle']) ? $agg['friendlytitle'] : '',
             'type' => $agg['type'],
             'stack' => $agg['stack'] == '1'
         );
 
-        $result = mysql_query('SELECT * FROM aggregate_parts WHERE aggregate_id='.mysql_real_escape_string($agg_id));
+        $result = mysqli_query($link, 'SELECT * FROM aggregate_parts WHERE aggregate_id='.mysqli_real_escape_string($link, $agg_id));
         $graphs_array = array();
-        if (mysql_num_rows($result) > 0) {
-            while ($part = mysql_fetch_assoc($result)) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($part = mysqli_fetch_assoc($result)) {
                 $graphs_array[] = array(
                     'rrdfolder' => $part['host'],
                     'rrdname' => $part['rrdname'],
@@ -449,21 +449,21 @@ function purgeOld($loglevel) {
     logline("PURGER: Beginning purge of old RRD files that have since gone down", 0, $loglevel);
     logline("PURGER: Your purge age is set to delete any RRDs/ports older than " . _ago($unixpurgeage), 1, $loglevel);
 
-    connectToDB();
+    $link=connectToDB();
     $findold = "SELECT * FROM ports WHERE lastpoll < {$unixpurgeage}";
-    $results = mysql_query($findold);
+    $results = mysqli_query($link, $findold);
 
-    $numresults = mysql_num_rows($results);
+    $numresults = mysqli_num_rows($results);
     if($numresults > 0) {
         logline("PURGER: Found {$numresults} candidate old RRDs/ports for deletion (older than " . _ago($unixpurgeage) . ")", 0, $loglevel);
-         while ($row = mysql_fetch_assoc($results)) {
+         while ($row = mysqli_fetch_assoc($results)) {
             logline("PURGER: Deleting '{$row['name']}' from host '{$row['host']}' and graphtype '{$row['graphtype']}' from the database", 2, $loglevel);
             $filetodelete = "{$path_rrd}{$row['host']}/{$row['host']}-{$row['safename']}_{$row['graphtype']}.rrd";
             logline("PURGER: Deleting '{$filetodelete}'. ", 2, $loglevel);
             unlink($filetodelete);
             logline("PURGER: Deleting row for '{$row['name']}' from the database", 2, $loglevel);
             $deleterow = 'DELETE FROM ports WHERE host="' . $row['host']. '" AND safename="'. $row['safename'] .'" AND graphtype="' . $row['graphtype']. '"';
-            mysql_query($deleterow);
+            mysqli_query($link, $deleterow);
             logline("PURGER: Done deleting '{$row['name']}' ", 1, $loglevel);
          }
     } else {
@@ -493,14 +493,14 @@ function logline($message, $messverbose, $reqverbose) {
 
 function connectToDB() {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db;
-    if(function_exists("mysql_connect")) {
-        if(!mysql_connect($mysql_host, $mysql_user, $mysql_pass)) {
+    if(function_exists("mysqli_connect")) {
+        if(!$link = mysqli_connect($mysql_host, $mysql_user, $mysql_pass)) {
             return false;
         }
-        if(!mysql_select_db($mysql_db)) {
+        if(!mysqli_select_db($link, $mysql_db)) {
             return false;
         }
-        return true;
+        return $link;
     } else {
         echo "MySQL support is required";
         return false;
@@ -517,10 +517,10 @@ function getAllEnabledHosts() {
 
 function getPortsForHostAndType($host, $type) {
     $ports = array();
-    if(connectToDB()) {
-        $result = mysql_query('SELECT * FROM ports WHERE host like "%' . mysql_real_escape_string($host). '%" AND graphtype like "%' . mysql_real_escape_string($type) . '%" ORDER BY lastpoll DESC, safename ASC');
-        if (mysql_num_rows($result) > 0) {
-            while ($row = mysql_fetch_assoc($result)) {
+    if($link=connectToDB()) {
+        $result = mysqli_query($link, 'SELECT * FROM ports WHERE host like "%' . mysqli_real_escape_string($link, $host). '%" AND graphtype like "%' . mysqli_real_escape_string($link, $type) . '%" ORDER BY lastpoll DESC, safename ASC');
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
                 $ports[] = $host . '-' . $row["safename"];
             }
         }
@@ -569,9 +569,9 @@ function htmlLastPollerTime() {
 }
 
 function htmlNumberOfGraphs() {
-    if(connectToDB()) {
-        $results = mysql_query("SELECT COUNT(*) from ports;");
-        $ports = mysql_result($results, 0);
+    if($link=connectToDB()) {
+        $results = mysqli_query($link, "SELECT COUNT(*) from ports;");
+        $ports = mysqli_fetch_row($results);
         echo "{$ports} graphs";
     } else {
         echo " Connect to database failed, are your MySQL details correct? ";
@@ -579,9 +579,9 @@ function htmlNumberOfGraphs() {
 }
 
 function htmlNumberOfHosts() {
-    if(connectToDB()) {
-        $results = mysql_query("SELECT COUNT(DISTINCT(host)) from ports;");
-        $hosts = mysql_result($results, 0);
+    if($link=connectToDB()) {
+        $results = mysqli_query($link, "SELECT COUNT(DISTINCT(host)) from ports;");
+        $ports = mysqli_fetch_row($results);
         echo "{$hosts} hosts";
     }
 }
