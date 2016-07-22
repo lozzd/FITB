@@ -572,7 +572,7 @@ function htmlNumberOfGraphs() {
     if($link=connectToDB()) {
         $results = mysqli_query($link, "SELECT COUNT(*) from ports;");
         $ports = mysqli_fetch_row($results);
-        echo "{$ports} graphs";
+        echo "{$ports[0]} graphs";
     } else {
         echo " Connect to database failed, are your MySQL details correct? ";
     }
@@ -581,8 +581,8 @@ function htmlNumberOfGraphs() {
 function htmlNumberOfHosts() {
     if($link=connectToDB()) {
         $results = mysqli_query($link, "SELECT COUNT(DISTINCT(host)) from ports;");
-        $ports = mysqli_fetch_row($results);
-        echo "{$hosts} hosts";
+        $hosts = mysqli_fetch_row($results);
+        echo "{$hosts[0]} hosts";
     }
 }
 
