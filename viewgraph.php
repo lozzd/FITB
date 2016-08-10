@@ -33,7 +33,7 @@ if(isset($_GET['duration'])) {
         <h2>View graph - <?php echo "$viewhost - $viewport - $viewtype" ?></h2>
             <?php
             $link=connectToDB();
-            $result = mysqli_query($link, 'SELECT * FROM ports WHERE host="' . mysqli_real_escape_string($viewhost). '" AND graphtype="' . mysqli_real_escape_string($viewtype) . '" AND safename="' . mysqli_real_escape_string($viewport) . '" ');
+            $result = mysqli_query($link, 'SELECT * FROM ports WHERE host="' . mysqli_real_escape_string($link, $viewhost). '" AND graphtype="' . mysqli_real_escape_string($link, $viewtype) . '" AND safename="' . mysqli_real_escape_string($link, $viewport) . '" ');
 
             if(mysqli_num_rows($result) > 0) {
                 $row = mysqli_fetch_assoc($result);

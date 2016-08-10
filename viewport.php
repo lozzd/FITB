@@ -27,7 +27,7 @@ if(isset($_GET['duration'])) {
         <h2>View port - <?php echo "$viewhost - $viewport" ?></h2>
             <?php
             $link = connectToDB();
-            $result = mysqli_query($link, 'SELECT * FROM ports WHERE host="' . mysqli_real_escape_string($viewhost). '" AND safename="' . mysqli_real_escape_string($viewport) . '" ORDER BY lastpoll DESC, safename ASC');
+            $result = mysqli_query($link, 'SELECT * FROM ports WHERE host="' . mysqli_real_escape_string($link, $viewhost). '" AND safename="' . mysqli_real_escape_string($link, $viewport) . '" ORDER BY lastpoll DESC, safename ASC');
 
             if(mysqli_num_rows($result) > 0) {
 
