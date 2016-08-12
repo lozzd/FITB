@@ -86,7 +86,9 @@ foreach($ifEntry as $intid => $thisint) {
         # Send data to carbon.
         if ($carbon) {
             foreach($graphite_metrics as $metric) {
-                fwrite($carbon, "{$graphite_prefix}.{$graphite_datacenter}-{$pollprettyhost}.{$thisint['name']}.{$metric} {$thisint[$metric]} {$timestamp}\n");
+                if ($thisint[$metric]) {
+                    fwrite($carbon, "{$graphite_prefix}.{$graphite_datacenter}-{$pollprettyhost}.{$thisint['name']}.{$metric} {$thisint[$metric]} {$timestamp}\n");
+                }
             }
         }
        
