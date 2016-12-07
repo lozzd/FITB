@@ -336,9 +336,10 @@ function getAggregateGraphsArrayFromRequest($request_data) {
 }
 
 function saveAggregate($graphs_array, $meta) {
-    if (!$link=connectToDB() || count($graphs_array) < 1) {
-        return false;
-    }
+    if(count($graphs_array) < 1) return false;
+    $link = connectToDB();
+    if(!$link) return false;
+
     $res = mysqli_query($link, 'START TRANSACTION');
 
     $friendlytitle = $meta['friendlytitle'] ? $meta['friendlytitle'] : null;
@@ -354,7 +355,7 @@ function saveAggregate($graphs_array, $meta) {
     $inserted = mysqli_query($link, $query);
 
     if ($inserted) {
-        $agg_id = mysqli_insert_id();
+        $agg_id = mysqli_insert_id($link);
 
         $inserts = array();
         foreach ($graphs_array as $g) {
@@ -493,18 +494,12 @@ function logline($message, $messverbose, $reqverbose) {
 
 function connectToDB() {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db;
-    if(function_exists("mysqli_connect")) {
-        if(!$link = mysqli_connect($mysql_host, $mysql_user, $mysql_pass)) {
-            return false;
-        }
-        if(!mysqli_select_db($link, $mysql_db)) {
-            return false;
-        }
-        return $link;
-    } else {
-        echo "MySQL support is required";
-        return false;
+    static $link = false;
+    if(!$link) {
+        $link = mysqli_connect($mysql_host, $mysql_user, $mysql_pass);
+        mysqli_select_db($link, $mysql_db);
     }
+    return $link;
 }
 
 function getAllEnabledHosts() {
